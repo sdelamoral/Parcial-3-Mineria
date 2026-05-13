@@ -1,0 +1,3 @@
+label=SVM / Lemma + TF-IDF
+prep=lemma
+f1=0.9629
