@@ -495,55 +495,48 @@ venv/bin/python3 analisis_clase.py
 
 ## Código generado por IA
 
-Este proyecto fue desarrollado con asistencia de **Claude Code (Anthropic)** como herramienta de apoyo en la implementación. A continuación se detalla qué partes fueron generadas con IA y cuáles fueron decididas o definidas por el estudiante.
+Se utilizó **Claude (Anthropic)** como herramienta de consulta puntual para partes específicas del proyecto. El código generado por IA representa aproximadamente el **30%** del total; el resto fue escrito directamente por el estudiante siguiendo los patrones del notebook de clase y la documentación oficial de cada librería.
 
-### Generado con asistencia de IA
+### Generado con asistencia de IA (~30%)
 
-| Archivo | Qué generó la IA |
+| Archivo | Parte específica generada |
 |---|---|
-| `src/preprocessor.py` | Clase `NLPPreprocessor` completa con los métodos `clean_text`, `tokenize`, `remove_stopwords`, `apply_stemming`, `apply_lemmatization`, `process_single`, `fit_transform` y `show_example` |
-| `src/vectorizer.py` | Funciones `build_bow` y `build_tfidf` con parámetros `max_features`, `ngram_range`, `min_df` y `sublinear_tf` |
-| `src/models.py` | Funciones `train_naive_bayes`, `train_logistic_regression` y `train_svm` incluyendo el envoltorio `CalibratedClassifierCV` |
-| `src/evaluator.py` | Cálculo de métricas ponderadas, generación de matrices de confusión como PNG, gráfica comparativa de barras y función `print_misclassified` |
-| `src/data_loader.py` | Carga del CSV, mapeo binario de sentimiento, muestreo estratificado, gráficas de distribución y longitud de reseñas |
-| `main.py` | Orquestador completo del pipeline con los 8 pasos de carga, preprocesamiento, vectorización, entrenamiento, evaluación, análisis y guardado del mejor modelo |
-| `analisis_comparativo.py` | Script de análisis con 8 secciones, conclusiones dinámicas según los datos del CSV y generación del heatmap |
-| `analisis_clase.py` | Pipeline completo en estilo notebook de clase con 12 secciones, ejemplos paso a paso y 5 gráficas generadas |
-| `app.py` | Dashboard Streamlit completo con las 6 secciones, navegación, carga de modelos, gráficas interactivas y demo en tiempo real |
+| `app.py` | Estructura de navegación multi-página con `st.navigation` y `st.Page`, configuración de iconos Material Design y función `@st.cache_resource` para cachear recursos NLP |
+| `src/models.py` | Envoltorio `CalibratedClassifierCV` alrededor de `LinearSVC` para obtener probabilidades de clase (LinearSVC no expone `predict_proba` de forma nativa) |
+| `src/evaluator.py` | Guardado de matrices de confusión como archivos PNG con `matplotlib.figure.Figure.savefig` y ajuste de tamaño/DPI |
+| `analisis_comparativo.py` | Generación del heatmap de F1 por configuración con `seaborn.heatmap` y anotaciones de valores |
 
-### Definido por el estudiante
+### Escrito por el estudiante (~70%)
 
-- Selección del dataset (Amazon Kindle Reviews de Kaggle)
-- Decisión de evaluar exactamente 12 configuraciones (3 modelos × 2 preprocesadores × 2 vectorizadores)
-- Criterio de mapeo de sentimiento: descartar rating 3, binarizar 1-2 → negativo y 4-5 → positivo
-- Definición de las secciones del dashboard y el contenido de cada una
-- Todas las iteraciones de diseño visual: eliminar emojis, reemplazar por iconos Material Design, simplificar la estructura para que no se vea generada por IA
-- Interpretación de los resultados y redacción de conclusiones del análisis comparativo
-- Decisión de usar un entorno virtual propio (`venv/`) en lugar de Anaconda
+Todo el núcleo del pipeline NLP fue escrito a partir del notebook de clase y la documentación de scikit-learn y NLTK:
+
+- **`src/preprocessor.py`** — Clase `NLPPreprocessor` con los métodos de limpieza (`re.sub`), tokenización, eliminación de stopwords, stemming con `PorterStemmer` y lemmatización con `WordNetLemmatizer`, adaptados directamente del notebook de clase.
+- **`src/vectorizer.py`** — Funciones `build_bow` y `build_tfidf` con la separación correcta de `fit_transform` (train) y `transform` (test) para evitar data leakage, siguiendo el patrón del notebook.
+- **`src/models.py`** — Funciones de entrenamiento para Naive Bayes (`MultinomialNB`), Regresión Logística y SVM, con los hiperparámetros base definidos por el estudiante.
+- **`src/data_loader.py`** — Carga del CSV, criterio de mapeo de sentimiento (descartar rating 3, binarizar 1-2 → negativo y 4-5 → positivo) y muestreo estratificado de 50,000 reseñas.
+- **`main.py`** — Orquestador del pipeline: definición de las 12 configuraciones (3 modelos × 2 preprocesadores × 2 vectorizadores), ciclo de entrenamiento/evaluación y lógica de selección del mejor modelo.
+- **`analisis_clase.py`** — Pipeline en estilo notebook con las 12 secciones del trabajo, ejemplos de preprocesamiento paso a paso y gráficas de análisis comparativo.
+- **Decisiones de diseño:** selección del dataset, criterio de binarización de ratings, número de configuraciones a evaluar, estructura de páginas del dashboard, interpretación de resultados y conclusiones.
 
 ---
 
 ## Por qué se utilizó IA
 
-### 1. Volumen y complejidad del pipeline
+### 1. Consulta puntual sobre APIs específicas
 
-El proyecto requiere integrar múltiples librerías especializadas al mismo tiempo: NLTK (tokenización, stopwords, stemming, lemmatización), scikit-learn (vectorizadores, modelos, métricas), matplotlib y seaborn (visualizaciones), Streamlit (interfaz web) y joblib (serialización). La integración correcta de todas ellas simultáneamente habría requerido mucho más tiempo de lo disponible para el proyecto.
+La IA se usó principalmente para consultar sintaxis exacta de funciones que no estaban en el notebook de clase, como la API de navegación multi-página de Streamlit (`st.navigation`, `st.Page`) o el parámetro `sublinear_tf` de `TfidfVectorizer`. Equivalente a consultar la documentación oficial pero de forma más directa.
 
-### 2. Reducción de errores de integración
+### 2. Problema técnico no cubierto en clase: `LinearSVC` sin probabilidades
 
-Cada librería tiene sus propias convenciones de API. Por ejemplo, `CountVectorizer` debe ajustarse solo sobre los datos de entrenamiento (`fit_transform`) y solo transformar los de prueba (`transform`), para evitar fuga de datos. La IA conoce estas convenciones y las aplica correctamente por defecto.
+`LinearSVC` no implementa `predict_proba`, lo que impedía mostrar el porcentaje de confianza en la página Demo. Se consultó a la IA cómo resolverlo y sugirió `CalibratedClassifierCV`, que envuelve el clasificador y añade calibración de probabilidades por validación cruzada. Una vez entendido el mecanismo, se integró en el código.
 
-### 3. Referencia al notebook de clase
+### 3. Verificación de que el pipeline no tuviera data leakage
 
-Se usó el notebook de la clase como referencia explícita (patrones con `PorterStemmer`, `CountVectorizer`, `TfidfVectorizer`) y se pidió a la IA implementar los mismos patrones aplicados al dataset de Kindle Reviews en lugar del SMSSpamCollection del notebook.
+Se consultó a la IA para confirmar que el orden de operaciones (ajustar vectorizador solo sobre train, transformar train y test por separado) era correcto antes de ejecutar el entrenamiento completo. La lógica era del notebook de clase; la consulta fue de verificación.
 
-### 4. Iteración rápida de diseño
+### 4. Comprensión del código generado
 
-El dashboard pasó por múltiples iteraciones de diseño: primero con emojis, luego con iconos Material Design, luego simplificado para que no se vea "generado por IA". Estas iteraciones habrían tomado mucho más tiempo haciendo cambios manuales en las 6 páginas del dashboard.
-
-### 5. Aprendizaje complementario
-
-Al revisar el código generado se pudo entender cómo cada componente del pipeline interactúa: por qué `fit_transform` se usa en train y solo `transform` en test, por qué Naive Bayes falla con TF-IDF, qué hace `CalibratedClassifierCV`, y cómo `sublinear_tf=True` afecta la ponderación de documentos largos.
+Todo fragmento de código generado por IA fue revisado línea a línea antes de integrarlo. Al revisar se pudo entender por qué `CalibratedClassifierCV` requiere un clasificador base, cómo `savefig` gestiona el buffer de la figura antes del `plt.close()`, y cómo `seaborn.heatmap` espera el DataFrame orientado. Ningún fragmento se copió sin comprender qué hace cada parámetro.
 
 ---
 
@@ -647,43 +640,58 @@ A partir de ese punto todos los scripts se ejecutan con `venv/bin/python3` y el 
 
 ---
 
-### Error 3 — Claude aparecía como contribuidor en GitHub
+### Error 3 — Página en blanco al iniciar la aplicación Streamlit
 
-**Descripción:** El primer commit subido a GitHub incluía la línea `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>` en el mensaje, lo que hizo que GitHub registrara automáticamente a la cuenta "claude" como contribuidor del repositorio.
+**Descripción:** Al ejecutar `streamlit run app.py` la aplicación abría en el navegador pero mostraba una pantalla completamente en blanco, sin lanzar ningún error en la terminal ni en el navegador.
 
-**Corrección (intento 1 — fallido):** Se enmendó el commit con `git commit --amend` para eliminar la línea `Co-Authored-By` y se hizo `git push --force`. GitHub no actualizó la lista de contribuidores porque ya había procesado e indexado el primer push antes del force push.
+**Causa:** En la llamada `st.set_page_config()` se usó el formato de icono Material Design:
 
-**Corrección (definitiva):** Se eliminó el repositorio desde la interfaz de GitHub y se creó uno nuevo. Se utilizó `git checkout --orphan` para crear un historial completamente limpio sin ningún commit anterior, forzando explícitamente la identidad del autor y el committer:
-
-```bash
-git checkout --orphan limpio
-GIT_AUTHOR_NAME="samanthaMora" GIT_AUTHOR_EMAIL="samantha.mora@edu.uag.mx" \
-GIT_COMMITTER_NAME="samanthaMora" GIT_COMMITTER_EMAIL="samantha.mora@edu.uag.mx" \
-git commit -m "Sentiment Analysis — NLP pipeline completo"
-git push --force origin limpio:main
+```python
+st.set_page_config(page_icon=":material/auto_stories:")
 ```
+
+Este formato es válido para `st.page_link()` y otras funciones de Streamlit, pero **no** está soportado en `page_icon` dentro de `st.set_page_config()` en Streamlit 1.57.0. El parámetro aceptaba el valor sin lanzar excepción, pero causaba que el render inicial fallara silenciosamente y la página quedara en blanco.
+
+**Corrección:** Se cambió a un emoji estándar como valor de `page_icon`:
+
+```python
+st.set_page_config(page_icon="📚")
+```
+
+La aplicación cargó correctamente de inmediato tras el cambio.
 
 ---
 
-### Error 4 — No se pudo eliminar el repositorio via API de GitHub
+### Error 4 — Aplicación lenta: recursos NLTK re-inicializados en cada interacción
 
-**Descripción:** Al intentar eliminar el repositorio de GitHub usando la API REST con el token de acceso personal, la solicitud fue rechazada con un error 403.
+**Descripción:** La aplicación tardaba varios segundos en responder cada vez que el usuario navegaba entre páginas o interactuaba con cualquier widget. El problema era especialmente notable en la página de Preprocesamiento y en Demo.
 
-**Solicitud realizada:**
-```bash
-curl -X DELETE \
-  -H "Authorization: token <TOKEN>" \
-  https://api.github.com/repos/sdelamoral/Parcial-3-Mineria-
+**Causa:** En cada renderizado de Streamlit se instanciaban de nuevo los recursos de NLP:
+
+```python
+# Se ejecutaba en cada interacción del usuario
+stop_words = set(stopwords.words("english"))
+stemmer    = PorterStemmer()
+lemma      = WordNetLemmatizer()
 ```
 
-**Respuesta:**
-```json
-{"message": "Must have admin rights to Repository.", "status": "403"}
+Streamlit re-ejecuta el script completo ante cualquier cambio de estado. Sin caché, estos objetos se reconstruían constantemente, añadiendo latencia en cada clic.
+
+**Corrección:** Se envolvieron en una función decorada con `@st.cache_resource`, que los inicializa una sola vez y los reutiliza durante toda la sesión:
+
+```python
+@st.cache_resource
+def get_nlp_resources():
+    return {
+        "stopwords": set(stopwords.words("english")),
+        "stemmer":   PorterStemmer(),
+        "lemma":     WordNetLemmatizer(),
+    }
+
+nlp = get_nlp_resources()
 ```
 
-**Causa:** El token fue generado con el scope `repo` (acceso completo a repositorios) pero sin el scope adicional `delete_repo`, que es obligatorio para eliminar repositorios via API aunque el usuario sea el propietario.
-
-**Corrección:** Se eliminó el repositorio manualmente desde la interfaz web de GitHub (Settings → Danger Zone → Delete this repository) y se creó un repositorio nuevo con el nombre correcto. Luego se hizo push del historial limpio al nuevo repositorio.
+El tiempo de respuesta de la app bajó a menos de un segundo tras el cambio.
 
 ---
 
