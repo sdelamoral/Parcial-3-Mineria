@@ -11,6 +11,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import streamlit as st
 
+import nltk
+for _r in ["punkt", "punkt_tab", "stopwords", "wordnet", "omw-1.4"]:
+    nltk.download(_r, quiet=True)
+
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer, WordNetLemmatizer
@@ -18,9 +22,10 @@ from src.preprocessor import NLPPreprocessor
 
 st.set_page_config(
     page_title="Sentiment Analysis — Kindle Reviews",
-    page_icon=":material/auto_stories:",
+    page_icon="📚",
     layout="wide",
 )
+
 
 OUTPUT_DIR = "outputs"
 MODEL_DIR  = "model"
@@ -58,6 +63,14 @@ def load_model():
             k, v = line.strip().split("=", 1)
             cfg[k] = v
     return m, vec, cfg
+
+@st.cache_resource
+def get_nlp_resources():
+    return {
+        "stopwords": set(stopwords.words("english")),
+        "stemmer":   PorterStemmer(),
+        "lemma":     WordNetLemmatizer(),
+    }
 
 def parse_label(label):
     modelo, resto = label.split(" / ")
@@ -207,7 +220,7 @@ elif pagina == "Preprocesamiento":
         st.caption("La diferencia en F1 entre ambos metodos fue de solo 0.0005 en este proyecto.")
 
     if procesar:
-        STOPWORDS_SET = set(stopwords.words("english"))
+        nlp = get_nlp_resources()
         st.write("")
 
         limpio = re.sub(r"http\S+|www\S+", " ", texto_input.lower())
@@ -221,15 +234,15 @@ elif pagina == "Preprocesamiento":
         tokens = word_tokenize(limpio)
         st.markdown("**Tokenizacion**"); st.code(str(tokens), language=None)
 
-        tokens_ns = [t for t in tokens if t not in STOPWORDS_SET and len(t) > 1]
-        eliminadas = [t for t in tokens if t in STOPWORDS_SET]
+        tokens_ns = [t for t in tokens if t not in nlp["stopwords"] and len(t) > 1]
+        eliminadas = [t for t in tokens if t in nlp["stopwords"]]
         st.markdown(f"**Sin stopwords** (eliminadas: `{eliminadas}`)"); st.code(str(tokens_ns), language=None)
 
         if metodo == "stem":
-            final = [PorterStemmer().stem(t) for t in tokens_ns]
+            final = [nlp["stemmer"].stem(t) for t in tokens_ns]
             st.markdown("**Stemming**")
         else:
-            final = [WordNetLemmatizer().lemmatize(t) for t in tokens_ns]
+            final = [nlp["lemma"].lemmatize(t) for t in tokens_ns]
             st.markdown("**Lemmatization**")
         st.code(str(final), language=None)
 
