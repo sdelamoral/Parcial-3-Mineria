@@ -495,48 +495,45 @@ venv/bin/python3 analisis_clase.py
 
 ## Código generado por IA
 
-Se utilizó **Claude (Anthropic)** como herramienta de consulta puntual para partes específicas del proyecto. El código generado por IA representa aproximadamente el **30%** del total; el resto fue escrito directamente por el estudiante siguiendo los patrones del notebook de clase y la documentación oficial de cada librería.
+Se utilizó **Claude (Anthropic)** como herramienta de apoyo puntual, principalmente para resolver un problema técnico específico y para depurar errores. El código generado por IA representa aproximadamente el **15%** del total; el resto fue escrito por el estudiante a partir del notebook de clase y la documentación oficial.
 
-### Generado con asistencia de IA (~30%)
+### Generado con asistencia de IA (~15%)
 
-| Archivo | Parte específica generada |
-|---|---|
-| `app.py` | Estructura de navegación multi-página con `st.navigation` y `st.Page`, configuración de iconos Material Design y función `@st.cache_resource` para cachear recursos NLP |
-| `src/models.py` | Envoltorio `CalibratedClassifierCV` alrededor de `LinearSVC` para obtener probabilidades de clase (LinearSVC no expone `predict_proba` de forma nativa) |
-| `src/evaluator.py` | Guardado de matrices de confusión como archivos PNG con `matplotlib.figure.Figure.savefig` y ajuste de tamaño/DPI |
-| `analisis_comparativo.py` | Generación del heatmap de F1 por configuración con `seaborn.heatmap` y anotaciones de valores |
+| Archivo | Parte específica generada | Motivo |
+|---|---|---|
+| `src/models.py` | Envoltorio `CalibratedClassifierCV` alrededor de `LinearSVC` | `LinearSVC` no expone `predict_proba`; se consultó cómo obtener probabilidades de clase |
+| `app.py` | Función `@st.cache_resource` para cachear los recursos NLP | Se consultó cómo evitar que los objetos se reinicializaran en cada interacción |
 
-### Escrito por el estudiante (~70%)
+### Escrito por el estudiante (~85%)
 
-Todo el núcleo del pipeline NLP fue escrito a partir del notebook de clase y la documentación de scikit-learn y NLTK:
+Todo el núcleo del pipeline NLP fue implementado directamente a partir del notebook de clase:
 
-- **`src/preprocessor.py`** — Clase `NLPPreprocessor` con los métodos de limpieza (`re.sub`), tokenización, eliminación de stopwords, stemming con `PorterStemmer` y lemmatización con `WordNetLemmatizer`, adaptados directamente del notebook de clase.
-- **`src/vectorizer.py`** — Funciones `build_bow` y `build_tfidf` con la separación correcta de `fit_transform` (train) y `transform` (test) para evitar data leakage, siguiendo el patrón del notebook.
-- **`src/models.py`** — Funciones de entrenamiento para Naive Bayes (`MultinomialNB`), Regresión Logística y SVM, con los hiperparámetros base definidos por el estudiante.
-- **`src/data_loader.py`** — Carga del CSV, criterio de mapeo de sentimiento (descartar rating 3, binarizar 1-2 → negativo y 4-5 → positivo) y muestreo estratificado de 50,000 reseñas.
-- **`main.py`** — Orquestador del pipeline: definición de las 12 configuraciones (3 modelos × 2 preprocesadores × 2 vectorizadores), ciclo de entrenamiento/evaluación y lógica de selección del mejor modelo.
-- **`analisis_clase.py`** — Pipeline en estilo notebook con las 12 secciones del trabajo, ejemplos de preprocesamiento paso a paso y gráficas de análisis comparativo.
-- **Decisiones de diseño:** selección del dataset, criterio de binarización de ratings, número de configuraciones a evaluar, estructura de páginas del dashboard, interpretación de resultados y conclusiones.
+- **`src/preprocessor.py`** — Clase `NLPPreprocessor` completa: limpieza con `re.sub`, tokenización, eliminación de stopwords, stemming (`PorterStemmer`) y lemmatización (`WordNetLemmatizer`), siguiendo exactamente los patrones del notebook.
+- **`src/vectorizer.py`** — Funciones `build_bow` y `build_tfidf` con `fit_transform` en train y `transform` en test para evitar data leakage, igual que en el notebook de clase.
+- **`src/models.py`** — Funciones de entrenamiento de Naive Bayes, Regresión Logística y SVM; solo el bloque de `CalibratedClassifierCV` fue consultado a la IA.
+- **`src/evaluator.py`** — Cálculo de métricas, generación de matrices de confusión y gráficas comparativas.
+- **`src/data_loader.py`** — Carga del CSV, mapeo de sentimiento (descartar rating 3, binarizar 1-2 → negativo y 4-5 → positivo) y muestreo estratificado de 50,000 reseñas.
+- **`main.py`** — Orquestador del pipeline con las 12 configuraciones (3 modelos × 2 preprocesadores × 2 vectorizadores) y selección del mejor modelo.
+- **`analisis_clase.py`** — Pipeline en estilo notebook con las 12 secciones del trabajo, adaptado del notebook de clase al dataset de Kindle Reviews.
+- **`analisis_comparativo.py`** — Script de análisis comparativo con conclusiones redactadas por el estudiante.
+- **`app.py`** — Estructura completa del dashboard (6 páginas, navegación, visualizaciones, demo en tiempo real); solo la función de caché fue consultada a la IA.
+- **Todas las decisiones de diseño:** selección del dataset, criterio de binarización, número de configuraciones, estructura del dashboard, interpretación de resultados y conclusiones.
 
 ---
 
 ## Por qué se utilizó IA
 
-### 1. Consulta puntual sobre APIs específicas
+### 1. Problema técnico puntual: `LinearSVC` sin `predict_proba`
 
-La IA se usó principalmente para consultar sintaxis exacta de funciones que no estaban en el notebook de clase, como la API de navegación multi-página de Streamlit (`st.navigation`, `st.Page`) o el parámetro `sublinear_tf` de `TfidfVectorizer`. Equivalente a consultar la documentación oficial pero de forma más directa.
+Al implementar la página Demo del dashboard se necesitaba mostrar el porcentaje de confianza de la predicción. `LinearSVC` no implementa `predict_proba` de forma nativa. Se consultó a la IA cómo resolver este problema específico y sugirió `CalibratedClassifierCV`, que agrega calibración de probabilidades por validación cruzada. Se entendió el mecanismo antes de integrarlo.
 
-### 2. Problema técnico no cubierto en clase: `LinearSVC` sin probabilidades
+### 2. Depuración de un bug de rendimiento
 
-`LinearSVC` no implementa `predict_proba`, lo que impedía mostrar el porcentaje de confianza en la página Demo. Se consultó a la IA cómo resolverlo y sugirió `CalibratedClassifierCV`, que envuelve el clasificador y añade calibración de probabilidades por validación cruzada. Una vez entendido el mecanismo, se integró en el código.
+La app tardaba varios segundos en responder porque los recursos de NLTK (stopwords, stemmer, lemmatizer) se reinicializaban en cada interacción. Se consultó a la IA cómo cachear objetos en Streamlit y se aplicó `@st.cache_resource`. Fuera de eso, el código del dashboard fue escrito por el estudiante.
 
-### 3. Verificación de que el pipeline no tuviera data leakage
+### 3. Comprensión de todo el código utilizado
 
-Se consultó a la IA para confirmar que el orden de operaciones (ajustar vectorizador solo sobre train, transformar train y test por separado) era correcto antes de ejecutar el entrenamiento completo. La lógica era del notebook de clase; la consulta fue de verificación.
-
-### 4. Comprensión del código generado
-
-Todo fragmento de código generado por IA fue revisado línea a línea antes de integrarlo. Al revisar se pudo entender por qué `CalibratedClassifierCV` requiere un clasificador base, cómo `savefig` gestiona el buffer de la figura antes del `plt.close()`, y cómo `seaborn.heatmap` espera el DataFrame orientado. Ningún fragmento se copió sin comprender qué hace cada parámetro.
+Ambos fragmentos consultados a la IA fueron revisados línea a línea antes de integrarlos. Se verificó qué hace `CalibratedClassifierCV` internamente (cross-val + isotonic/sigmoid calibration) y cómo `@st.cache_resource` difiere de `@st.cache_data` (objetos compartidos vs. datos copiados por usuario). Ningún fragmento se usó sin comprenderlo.
 
 ---
 
