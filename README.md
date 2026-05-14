@@ -1,36 +1,406 @@
 # Sentiment Analysis — Amazon Kindle Reviews
 **Mini Proyecto 3 · Minería de Datos**  
-Universidad Autónoma de Guadalajara
+Universidad Autónoma de Guadalajara · 2026
 
 ---
 
-## Descripción
+## Tabla de contenido
 
-Sistema de clasificación de sentimientos entrenado sobre reseñas de libros de Amazon Kindle. El modelo determina automáticamente si una reseña expresa un sentimiento **positivo** o **negativo** usando técnicas de Procesamiento de Lenguaje Natural (NLP).
+1. [Descripción general](#descripción-general)
+2. [Dataset](#dataset)
+3. [Conceptos NLP aplicados](#conceptos-nlp-aplicados)
+4. [Pipeline de preprocesamiento](#pipeline-de-preprocesamiento)
+5. [Representaciones vectoriales](#representaciones-vectoriales)
+6. [Modelos entrenados](#modelos-entrenados)
+7. [Resultados](#resultados)
+8. [Análisis comparativo](#análisis-comparativo)
+9. [Dashboard interactivo](#dashboard-interactivo)
+10. [Estructura del proyecto](#estructura-del-proyecto)
+11. [Instalación y ejecución](#instalación-y-ejecución)
+12. [Código generado por IA](#código-generado-por-ia)
+13. [Por qué se utilizó IA](#por-qué-se-utilizó-ia)
+14. [Pruebas realizadas](#pruebas-realizadas)
+15. [Errores encontrados y correcciones](#errores-encontrados-y-correcciones)
+16. [Limitaciones del sistema](#limitaciones-del-sistema)
+17. [Trabajo futuro](#trabajo-futuro)
+18. [Referencias](#referencias)
 
-Se evaluaron **12 configuraciones** combinando:
-- 3 modelos: Naive Bayes, Logistic Regression, SVM (LinearSVC)
-- 2 técnicas de preprocesamiento: Stemming (PorterStemmer) y Lemmatization (WordNetLemmatizer)
-- 2 representaciones vectoriales: Bag-of-Words y TF-IDF
+---
 
-**Mejor resultado:** SVM + Lemmatization + TF-IDF → F1-score = **0.9629**
+## Descripción general
+
+Este proyecto implementa un sistema completo de **Sentiment Analysis** (análisis de sentimientos) aplicado a reseñas de libros de Amazon Kindle. El objetivo es clasificar automáticamente si una reseña expresa un sentimiento **positivo** o **negativo** utilizando técnicas de Procesamiento de Lenguaje Natural (NLP) y Machine Learning.
+
+El sistema cubre el flujo completo:
+
+```
+Datos crudos → Limpieza → Tokenización → Stopwords → Reducción morfológica
+→ Vectorización → Entrenamiento → Evaluación → Análisis comparativo
+```
+
+Se evaluaron **12 configuraciones** resultado de combinar:
+
+- **3 modelos:** Naive Bayes · Logistic Regression · SVM (LinearSVC)
+- **2 técnicas de preprocesamiento:** Stemming · Lemmatization
+- **2 representaciones vectoriales:** Bag-of-Words · TF-IDF
+
+**Mejor resultado obtenido:** SVM + Lemmatization + TF-IDF con **F1-score = 0.9629** y **Accuracy = 0.9659** sobre un conjunto de prueba de 10,000 reseñas.
 
 ---
 
 ## Dataset
 
 **Fuente:** [Amazon Kindle Reviews — Kaggle](https://www.kaggle.com/datasets/bharadwaj6/kindle-reviews)  
-**Autor del dataset:** bharadwaj6  
-**Tamaño original:** 982,619 reseñas  
-**Muestra utilizada:** 50,000 reseñas (selección aleatoria con `random_state=42`)
+**Autor:** bharadwaj6  
+**Formato:** CSV con columnas `reviewText`, `overall`, `summary`, `reviewerID`, entre otras.
 
-Mapeo de sentimiento:
+### Características del dataset
 
-| Rating | Etiqueta |
-|--------|----------|
-| 1 – 2 estrellas | Negativo (0) |
-| 3 estrellas | Descartado (neutral ambiguo) |
-| 4 – 5 estrellas | Positivo (1) |
+| Atributo | Valor |
+|---|---|
+| Reseñas totales | 982,619 |
+| Muestra utilizada | 50,000 |
+| Columnas usadas | `reviewText`, `overall` |
+| Rating mínimo | 1 estrella |
+| Rating máximo | 5 estrellas |
+| Idioma | Inglés |
+
+### Mapeo de sentimiento
+
+Las calificaciones originales (1–5 estrellas) se convirtieron a etiquetas binarias:
+
+| Rating | Etiqueta | Justificación |
+|---|---|---|
+| 1 – 2 estrellas | Negativo (0) | El lector no quedó satisfecho con el libro |
+| 3 estrellas | **Descartado** | Sentimiento neutro o ambiguo, no aporta señal clara |
+| 4 – 5 estrellas | Positivo (1) | El lector quedó satisfecho o amó el libro |
+
+### Distribución de clases
+
+| Clase | Cantidad | Porcentaje |
+|---|---|---|
+| Positivo | 46,693 | 93.4% |
+| Negativo | 3,307 | 6.6% |
+
+El dataset presenta un **desbalance severo** con una proporción 14:1 entre positivos y negativos. Esto es un problema importante porque un clasificador que siempre prediga "Positivo" alcanzaría 93.4% de accuracy sin aprender nada útil. Por esta razón se usó **F1-score** como métrica principal.
+
+---
+
+## Conceptos NLP aplicados
+
+### Tokenización
+
+La tokenización divide el texto en unidades mínimas llamadas **tokens** (palabras, signos de puntuación). Se utilizó `word_tokenize` de NLTK, que maneja correctamente contracciones en inglés como `"couldn't"` → `["could", "n't"]`.
+
+```python
+from nltk.tokenize import word_tokenize
+tokens = word_tokenize("I loved this book!")
+# → ['I', 'loved', 'this', 'book', '!']
+```
+
+### Stopwords
+
+Las **stopwords** son palabras muy frecuentes que no aportan información discriminante: *"the"*, *"a"*, *"is"*, *"was"*, *"and"*, etc. Se eliminaron usando la lista de stopwords en inglés de NLTK (179 palabras).
+
+```python
+from nltk.corpus import stopwords
+STOPWORDS = set(stopwords.words("english"))
+tokens_filtrados = [t for t in tokens if t not in STOPWORDS and len(t) > 1]
+```
+
+### Stemming
+
+El **Stemming** recorta los sufijos de las palabras aplicando reglas morfológicas simples, sin consultar un diccionario. Se utilizó el `PorterStemmer` de NLTK.
+
+| Palabra original | Stem |
+|---|---|
+| specifically | specif |
+| learning | learn |
+| disappointed | disappoint |
+| running | run |
+| becomes | becom |
+
+**Ventaja:** muy rápido.  
+**Desventaja:** puede producir tokens que no son palabras reales del diccionario.
+
+### Lemmatization
+
+La **Lemmatization** devuelve la forma canónica (lema) de cada palabra consultando el diccionario WordNet. Se utilizó el `WordNetLemmatizer` de NLTK.
+
+| Palabra original | Lema |
+|---|---|
+| loved | love |
+| running | running *(sin contexto POS)* |
+| books | book |
+| better | good *(con contexto POS)* |
+| disappointed | disappointed |
+
+**Ventaja:** siempre produce palabras válidas del diccionario, vocabulario más interpretable.  
+**Desventaja:** más lento que Stemming; sin etiquetado POS el resultado es conservador.
+
+---
+
+## Pipeline de preprocesamiento
+
+El pipeline NLP se implementó en `src/preprocessor.py` mediante la clase `NLPPreprocessor`:
+
+```
+Texto original
+    │
+    ▼  re.sub(r"[^a-zA-Z]", " ", text)
+Eliminar caracteres no alfabéticos (números, puntuación, emojis)
+    │
+    ▼  text.lower()
+Convertir a minúsculas
+    │
+    ▼  text.split()
+Tokenizar por espacios
+    │
+    ▼  [w for w in tokens if w not in STOPWORDS and len(w) > 1]
+Eliminar stopwords y tokens de 1 carácter
+    │
+    ├─── Stemming ──────► PorterStemmer().stem(token)
+    └─── Lemmatization ─► WordNetLemmatizer().lemmatize(token)
+    │
+    ▼
+" ".join(tokens)   →   texto limpio listo para vectorizar
+```
+
+### Ejemplo de transformación
+
+**Texto original:**
+> "I absolutely loved this book! The characters were beautifully written and the plot was amazing. Couldn't put it down."
+
+**Paso 1 – Limpieza:**
+> "I absolutely loved this book  The characters were beautifully written and the plot was amazing  Couldn t put it down"
+
+**Paso 2 – Minúsculas:**
+> "i absolutely loved this book the characters were beautifully written and the plot was amazing couldn t put it down"
+
+**Paso 3 – Tokenización:**
+> `['i', 'absolutely', 'loved', 'this', 'book', 'the', 'characters', 'were', ...]`
+
+**Paso 4 – Sin stopwords:**
+> `['absolutely', 'loved', 'book', 'characters', 'beautifully', 'written', 'plot', 'amazing', 'couldn', 'put']`
+
+**Paso 5a – Stemming:**
+> `['absolut', 'love', 'book', 'charact', 'beautifulli', 'written', 'plot', 'amaz', 'couldn', 'put']`
+
+**Paso 5b – Lemmatization:**
+> `['absolutely', 'loved', 'book', 'character', 'beautifully', 'written', 'plot', 'amazing', 'could', 'put']`
+
+---
+
+## Representaciones vectoriales
+
+### Bag-of-Words (BoW)
+
+BoW convierte cada texto en un vector de frecuencias: cada dimensión representa una palabra del vocabulario y su valor es el número de veces que aparece en el documento. Se implementó con `CountVectorizer` de scikit-learn.
+
+```python
+from sklearn.feature_extraction.text import CountVectorizer
+
+vectorizer = CountVectorizer(
+    max_features=20_000,    # vocabulario máximo
+    ngram_range=(1, 2),     # unigramas y bigramas
+    min_df=2,               # ignorar términos que aparecen en menos de 2 docs
+)
+X_train = vectorizer.fit_transform(textos_train)
+X_test  = vectorizer.transform(textos_test)
+```
+
+**Resultado:** matriz dispersa de forma `(40000, 20000)`.
+
+Los **bigramas** (`ngram_range=(1,2)`) permiten capturar expresiones como *"not good"*, *"very disappointed"* o *"highly recommended"* como features individuales.
+
+**Ventaja:** sencillo, rápido, funciona bien con Naive Bayes.  
+**Desventaja:** trata todas las palabras con igual peso, sin considerar su relevancia informativa.
+
+### TF-IDF
+
+TF-IDF (Term Frequency - Inverse Document Frequency) pondera cada término según dos criterios:
+
+- **TF:** qué tan frecuente es la palabra en el documento actual.
+- **IDF:** qué tan raro es ese término en todo el corpus (palabras raras = más informativas).
+
+```
+TF-IDF(t, d) = TF(t, d) × IDF(t)
+IDF(t) = log( N / df(t) ) + 1
+```
+
+Con `sublinear_tf=True` el TF se reemplaza por `1 + log(tf)`, suavizando el efecto de documentos muy largos.
+
+```python
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+vectorizer = TfidfVectorizer(
+    max_features=20_000,
+    ngram_range=(1, 2),
+    min_df=2,
+    sublinear_tf=True,
+)
+```
+
+**Ventaja:** penaliza palabras muy comunes (*"book"*, *"read"*) y amplifica las discriminantes (*"disappointed"*, *"excellent"*).  
+**Desventaja:** produce valores continuos que son incompatibles con Naive Bayes multinomial.
+
+---
+
+## Modelos entrenados
+
+### Naive Bayes (MultinomialNB)
+
+Clasificador probabilístico basado en el teorema de Bayes que asume independencia condicional entre features:
+
+```
+P(clase | texto) ∝ P(clase) × ∏ P(palabra_i | clase)
+```
+
+```python
+from sklearn.naive_bayes import MultinomialNB
+model = MultinomialNB(alpha=0.5)   # suavizado de Laplace
+```
+
+**Hiperparámetro:** `alpha=0.5` (suavizado de Laplace para evitar probabilidades cero).  
+**Ventaja:** extremadamente rápido, funciona bien con BoW.  
+**Limitación:** asume independencia entre palabras y requiere frecuencias enteras no negativas. TF-IDF viola estos supuestos y degrada su rendimiento.
+
+### Logistic Regression
+
+Modelo lineal que aprende una frontera de decisión en el espacio de features:
+
+```
+P(Positivo | x) = σ(w · x + b) = 1 / (1 + e^(-(w·x+b)))
+```
+
+```python
+from sklearn.linear_model import LogisticRegression
+model = LogisticRegression(
+    C=1.0,          # inverso de la regularización L2
+    max_iter=1000,
+    solver="lbfgs",
+    random_state=42,
+)
+```
+
+**Ventaja:** produce probabilidades calibradas, muy rápido en inferencia, competitivo con SVM.  
+**Adecuado para:** espacios de alta dimensión como BoW/TF-IDF con 20,000 features.
+
+### SVM — LinearSVC
+
+Máquina de Vectores de Soporte que busca el hiperplano de máximo margen entre las clases:
+
+```python
+from sklearn.svm import LinearSVC
+from sklearn.calibration import CalibratedClassifierCV
+
+base  = LinearSVC(C=1.0, max_iter=2000, random_state=42)
+model = CalibratedClassifierCV(base, cv=3)   # para obtener predict_proba
+```
+
+`LinearSVC` se envolvió en `CalibratedClassifierCV` para exponer probabilidades de clase mediante validación cruzada de 3 folds, necesarias para la barra de confianza del Dashboard.
+
+**Ventaja:** el mejor modelo para textos en alta dimensión; maximiza el margen de separación.  
+**Adecuado para:** problemas linealmente separables en espacios de muchas dimensiones.
+
+---
+
+## Resultados
+
+### Tabla completa de las 12 configuraciones
+
+| Configuración | Accuracy | Precision | Recall | F1-score |
+|---|---|---|---|---|
+| **SVM / Lemma + TF-IDF** | **0.9659** | 0.9635 | 0.9659 | **0.9629** |
+| SVM / Stem + TF-IDF | 0.9659 | 0.9635 | 0.9659 | 0.9627 |
+| Logistic Regression / Lemma + BoW | 0.9641 | 0.9613 | 0.9641 | 0.9617 |
+| Logistic Regression / Stem + BoW | 0.9624 | 0.9594 | 0.9624 | 0.9599 |
+| SVM / Lemma + BoW | 0.9588 | 0.9561 | 0.9588 | 0.9522 |
+| SVM / Stem + BoW | 0.9575 | 0.9544 | 0.9575 | 0.9504 |
+| Logistic Regression / Stem + TF-IDF | 0.9561 | 0.9557 | 0.9561 | 0.9466 |
+| Logistic Regression / Lemma + TF-IDF | 0.9546 | 0.9545 | 0.9546 | 0.9441 |
+| Naive Bayes / Lemma + BoW | 0.9432 | 0.9543 | 0.9432 | 0.9474 |
+| Naive Bayes / Stem + BoW | 0.9411 | 0.9530 | 0.9411 | 0.9456 |
+| Naive Bayes / Stem + TF-IDF | 0.9408 | 0.9412 | 0.9408 | 0.9187 |
+| **Naive Bayes / Lemma + TF-IDF** | 0.9408 | 0.9406 | 0.9408 | **0.9184** |
+
+### Reporte de clasificación del mejor modelo
+
+**SVM / Lemma + TF-IDF** sobre 10,000 reseñas de prueba:
+
+```
+              precision    recall  f1-score   support
+
+    Negativo       0.84      0.58      0.69       661
+    Positivo       0.97      0.99      0.98      9339
+
+    accuracy                           0.96     10000
+   macro avg       0.90      0.79      0.83     10000
+weighted avg       0.96      0.96      0.96     10000
+```
+
+El recall de la clase **Negativa** (0.58) es significativamente menor al de la clase Positiva (0.99), consecuencia directa del desbalance 14:1 del dataset.
+
+---
+
+## Análisis comparativo
+
+### BoW vs TF-IDF
+
+| Vectorizador | F1 promedio (todos los modelos) |
+|---|---|
+| BoW | 0.9529 |
+| TF-IDF | 0.9422 |
+
+**BoW gana en promedio**, pero únicamente porque Naive Bayes colapsa con TF-IDF (F1 = 0.9184). Si se excluye Naive Bayes y se comparan solo SVM y Logistic Regression, **TF-IDF es superior**.
+
+TF-IDF es mejor para este problema porque penaliza palabras muy frecuentes en el corpus entero (*"book"*, *"read"*, *"story"*) que no aportan información discriminante sobre el sentimiento, y amplifica el peso de palabras que aparecen en pocos documentos (*"disappointed"*, *"excellent"*, *"terrible"*) que son precisamente las más informativas.
+
+### Stemming vs Lemmatization
+
+| Preprocesamiento | F1 promedio |
+|---|---|
+| Stemming | 0.9473 |
+| Lemmatization | 0.9478 |
+
+La diferencia es **mínima (+0.0005)** — ambos métodos son prácticamente equivalentes en rendimiento para este corpus. La elección entre uno y otro depende más de criterios prácticos que de métricas:
+
+- **Stemming** es preferible cuando la velocidad importa y el vocabulario resultante no necesita ser interpretable.
+- **Lemmatization** es preferible cuando se quiere inspeccionar qué palabras tienen más peso en el modelo, ya que los tokens son siempre palabras válidas del diccionario.
+
+### Comparación de modelos
+
+| Modelo | F1 promedio | F1 máximo | F1 mínimo |
+|---|---|---|---|
+| SVM | 0.9571 | 0.9629 | 0.9504 |
+| Logistic Regression | 0.9531 | 0.9617 | 0.9441 |
+| Naive Bayes | 0.9325 | 0.9474 | 0.9184 |
+
+**SVM** es el mejor modelo porque el espacio de 20,000 features es naturalmente de alta dimensión y los textos son linealmente separables en él. SVM maximiza el margen entre clases, lo que lo hace robusto frente al ruido y al desbalance.
+
+**Naive Bayes** tiene el peor rendimiento con TF-IDF porque `MultinomialNB` espera frecuencias enteras no negativas e independencia condicional entre features, supuestos que TF-IDF viola al producir valores continuos ponderados.
+
+---
+
+## Dashboard interactivo
+
+La aplicación Streamlit (`app.py`) está organizada en 6 secciones accesibles desde el menú lateral:
+
+| Sección | Contenido |
+|---|---|
+| **Inicio** | Descripción del proyecto, resumen de resultados y guía de navegación |
+| **Dataset** | Gráficas de distribución de ratings, longitud de reseñas y explicación del desbalance |
+| **Preprocesamiento** | Pipeline NLP interactivo: escribe cualquier texto y ve la transformación paso a paso |
+| **Resultados** | Tabla de las 12 configuraciones con resaltado de máximos/mínimos y selector de matrices de confusión |
+| **Análisis Comparativo** | 4 tabs: BoW vs TF-IDF, Stemming vs Lemmatization, comparación de modelos, errores de clasificación |
+| **Demo** | 10 ejemplos predefinidos + campo libre para clasificar texto en tiempo real con porcentaje de confianza |
+
+Para lanzar el dashboard:
+
+```bash
+venv/bin/streamlit run app.py
+# → http://localhost:8501
+```
 
 ---
 
@@ -40,261 +410,313 @@ Mapeo de sentimiento:
 P3 Mini Proyecto/
 │
 ├── data/
-│   └── kindle_reviews.csv          # Dataset descargado de Kaggle
+│   └── kindle_reviews.csv              # Dataset descargado de Kaggle
 │
 ├── src/
-│   ├── data_loader.py              # Carga y exploración del dataset
-│   ├── preprocessor.py             # Pipeline NLP (NLPPreprocessor)
-│   ├── vectorizer.py               # CountVectorizer y TfidfVectorizer
-│   ├── models.py                   # Naive Bayes, Logistic Regression, SVM
-│   └── evaluator.py                # Métricas, confusion matrix, comparación
+│   ├── __init__.py
+│   ├── data_loader.py                  # Carga y exploración del dataset
+│   ├── preprocessor.py                 # Clase NLPPreprocessor (stem/lemma)
+│   ├── vectorizer.py                   # build_bow() y build_tfidf()
+│   ├── models.py                       # train_naive_bayes(), train_logistic_regression(), train_svm()
+│   └── evaluator.py                    # Métricas, confusion matrix, gráficas comparativas
 │
-├── outputs/                        # Gráficas y resultados generados
-│   ├── results_summary.csv         # Tabla de las 12 configuraciones
-│   ├── model_comparison.png        # Gráfica comparativa de modelos
-│   ├── cm_*.png                    # Matrices de confusión por configuración
-│   └── ...
+├── outputs/
+│   ├── results_summary.csv             # Tabla de resultados de las 12 configuraciones
+│   ├── model_comparison.png            # Gráfica comparativa de F1 por modelo
+│   ├── analisis_comparativo_heatmap.png
+│   ├── cm_naive_bayes___stem_+_bow.png # Matrices de confusión por configuración
+│   └── ... (16 archivos PNG en total)
 │
 ├── model/
-│   ├── best_model.pkl              # Mejor modelo entrenado (SVM)
-│   ├── best_vectorizer.pkl         # Vectorizador correspondiente (TF-IDF)
-│   └── best_config.txt             # Metadatos del mejor modelo
+│   ├── best_model.pkl                  # Mejor modelo serializado (SVM calibrado)
+│   ├── best_vectorizer.pkl             # TfidfVectorizer serializado
+│   └── best_config.txt                 # label, prep method y F1 del mejor modelo
 │
-├── main.py                         # Pipeline completo de entrenamiento
-├── analisis_comparativo.py         # Análisis comparativo desde CSV
-├── analisis_clase.py               # Pipeline en estilo notebook de clase
-├── download_data.py                # Descarga del dataset desde Kaggle
-├── app.py                          # Dashboard interactivo (Streamlit)
-└── requirements.txt
+├── main.py                             # Orquestador del pipeline completo de entrenamiento
+├── analisis_comparativo.py             # Análisis comparativo leyendo desde results_summary.csv
+├── analisis_clase.py                   # Pipeline completo en estilo notebook de clase
+├── download_data.py                    # Descarga del dataset via kagglehub
+├── app.py                              # Dashboard interactivo (Streamlit)
+├── requirements.txt                    # Dependencias del proyecto
+└── README.md                           # Este archivo
 ```
 
 ---
 
 ## Instalación y ejecución
 
-### Requisitos
-- Python 3.9+
-- Cuenta de Kaggle (para descargar el dataset)
+### Requisitos previos
 
-### Pasos
+- Python 3.9 o superior
+- Cuenta activa en [Kaggle](https://www.kaggle.com) (para descargar el dataset)
+- Credenciales de Kaggle en `~/.kaggle/kaggle.json`
+
+### Pasos de instalación
 
 ```bash
-# 1. Crear entorno virtual
+# 1. Clonar el repositorio
+git clone https://github.com/sdelamoral/Parcial-3-Mineria.git
+cd Parcial-3-Mineria
+
+# 2. Crear entorno virtual
 python3 -m venv venv
-source venv/bin/activate        # Mac/Linux
+
+# 3. Activar el entorno virtual
+source venv/bin/activate        # Mac / Linux
 venv\Scripts\activate           # Windows
 
-# 2. Instalar dependencias
+# 4. Instalar dependencias
 pip install -r requirements.txt
 
-# 3. Descargar el dataset (solo la primera vez)
+# 5. Descargar el dataset desde Kaggle (solo la primera vez)
 python download_data.py
 
-# 4. Entrenar todos los modelos y generar resultados
+# 6. Entrenar todos los modelos y generar resultados
 python main.py
+# Tiempo estimado: 5–15 minutos dependiendo del hardware
 
-# 5. Lanzar el dashboard
+# 7. Lanzar el dashboard interactivo
 venv/bin/streamlit run app.py
 ```
 
 El dashboard queda disponible en `http://localhost:8501`.
 
----
+### Scripts adicionales
 
-## Pipeline NLP
+```bash
+# Ejecutar solo el análisis comparativo (requiere haber corrido main.py antes)
+venv/bin/python3 analisis_comparativo.py
 
+# Ejecutar el pipeline completo en estilo notebook (autónomo, no requiere main.py)
+venv/bin/python3 analisis_clase.py
 ```
-Texto original
-    │
-    ▼
-Limpieza          re.sub('[^a-zA-Z]', ' ', text) → lowercase
-    │
-    ▼
-Tokenización      word_tokenize (NLTK)
-    │
-    ▼
-Stopwords         eliminación con nltk.corpus.stopwords ('english')
-    │
-    ├──── Stemming ────► PorterStemmer  → tokens reducidos por sufijo
-    └──── Lemmatization → WordNetLemmatizer → forma canónica del diccionario
-    │
-    ▼
-Vectorización
-    ├──── Bag-of-Words  → CountVectorizer  (max_features=20,000, ngram_range=(1,2))
-    └──── TF-IDF        → TfidfVectorizer  (max_features=20,000, sublinear_tf=True)
-    │
-    ▼
-Clasificador      Naive Bayes / Logistic Regression / SVM
-```
-
----
-
-## Resultados
-
-| Configuración | Accuracy | F1-score |
-|---|---|---|
-| SVM / Lemma + TF-IDF | 0.9659 | 0.9629 |
-| SVM / Stem + TF-IDF | 0.9659 | 0.9627 |
-| Logistic Regression / Lemma + BoW | 0.9641 | 0.9617 |
-| Logistic Regression / Stem + BoW | 0.9624 | 0.9599 |
-| Naive Bayes / Lemma + TF-IDF | 0.9408 | 0.9184 |
-
-**Problema detectado:** el dataset tiene un desbalance severo (93.4% positivo / 6.6% negativo). El recall de la clase negativa varía entre 0.11 (Naive Bayes + TF-IDF) y 0.76, lo que indica que los modelos tienden a clasificar reseñas negativas como positivas.
 
 ---
 
 ## Código generado por IA
 
-Este proyecto fue desarrollado con asistencia de **Claude Code (Anthropic)** como herramienta de apoyo en el proceso de implementación. A continuación se detalla qué partes fueron generadas con IA y cuáles fueron de autoría propia:
+Este proyecto fue desarrollado con asistencia de **Claude Code (Anthropic)** como herramienta de apoyo en la implementación. A continuación se detalla qué partes fueron generadas con IA y cuáles fueron decididas o definidas por el estudiante.
 
 ### Generado con asistencia de IA
 
-| Archivo | Descripción |
+| Archivo | Qué generó la IA |
 |---|---|
-| `src/preprocessor.py` | Clase `NLPPreprocessor` con los dos métodos de reducción |
-| `src/vectorizer.py` | Funciones `build_bow` y `build_tfidf` |
-| `src/models.py` | Funciones de entrenamiento para los tres clasificadores |
-| `src/evaluator.py` | Cálculo de métricas, gráficas de confusion matrix y comparación |
-| `src/data_loader.py` | Carga del CSV, mapeo binario de sentimiento, exploración |
-| `main.py` | Orquestador del pipeline completo |
-| `analisis_comparativo.py` | Script de análisis comparativo sobre resultados pre-calculados |
-| `analisis_clase.py` | Pipeline completo en estilo notebook (para referencia académica) |
-| `app.py` | Dashboard Streamlit con las 6 secciones interactivas |
+| `src/preprocessor.py` | Clase `NLPPreprocessor` completa con los métodos `clean_text`, `tokenize`, `remove_stopwords`, `apply_stemming`, `apply_lemmatization`, `process_single`, `fit_transform` y `show_example` |
+| `src/vectorizer.py` | Funciones `build_bow` y `build_tfidf` con parámetros `max_features`, `ngram_range`, `min_df` y `sublinear_tf` |
+| `src/models.py` | Funciones `train_naive_bayes`, `train_logistic_regression` y `train_svm` incluyendo el envoltorio `CalibratedClassifierCV` |
+| `src/evaluator.py` | Cálculo de métricas ponderadas, generación de matrices de confusión como PNG, gráfica comparativa de barras y función `print_misclassified` |
+| `src/data_loader.py` | Carga del CSV, mapeo binario de sentimiento, muestreo estratificado, gráficas de distribución y longitud de reseñas |
+| `main.py` | Orquestador completo del pipeline con los 8 pasos de carga, preprocesamiento, vectorización, entrenamiento, evaluación, análisis y guardado del mejor modelo |
+| `analisis_comparativo.py` | Script de análisis con 8 secciones, conclusiones dinámicas según los datos del CSV y generación del heatmap |
+| `analisis_clase.py` | Pipeline completo en estilo notebook de clase con 12 secciones, ejemplos paso a paso y 5 gráficas generadas |
+| `app.py` | Dashboard Streamlit completo con las 6 secciones, navegación, carga de modelos, gráficas interactivas y demo en tiempo real |
 
 ### Definido por el estudiante
 
-- Selección del dataset (Amazon Kindle Reviews, Kaggle)
-- Decisión de evaluar 12 configuraciones (3 × 2 × 2)
-- Mapeo de sentimiento: descartar rating 3, binarizar 1-2 y 4-5
-- Definición de las secciones del dashboard y su contenido
-- Iteraciones de diseño y ajustes visuales de la interfaz
-- Interpretación de los resultados y conclusiones del análisis comparativo
+- Selección del dataset (Amazon Kindle Reviews de Kaggle)
+- Decisión de evaluar exactamente 12 configuraciones (3 modelos × 2 preprocesadores × 2 vectorizadores)
+- Criterio de mapeo de sentimiento: descartar rating 3, binarizar 1-2 → negativo y 4-5 → positivo
+- Definición de las secciones del dashboard y el contenido de cada una
+- Todas las iteraciones de diseño visual: eliminar emojis, reemplazar por iconos Material Design, simplificar la estructura para que no se vea generada por IA
+- Interpretación de los resultados y redacción de conclusiones del análisis comparativo
+- Decisión de usar un entorno virtual propio (`venv/`) en lugar de Anaconda
 
 ---
 
 ## Por qué se utilizó IA
 
-1. **Velocidad de implementación:** el proyecto requería un pipeline completo (carga, preprocesamiento, vectorización, entrenamiento, evaluación y visualización) en un tiempo limitado. La IA permitió construir la estructura base de forma rápida.
+### 1. Volumen y complejidad del pipeline
 
-2. **Reducción de errores de sintaxis:** trabajar con múltiples librerías (NLTK, scikit-learn, Streamlit, matplotlib, seaborn, joblib) al mismo tiempo aumenta la probabilidad de errores. La IA ayudó a integrarlas correctamente.
+El proyecto requiere integrar múltiples librerías especializadas al mismo tiempo: NLTK (tokenización, stopwords, stemming, lemmatización), scikit-learn (vectorizadores, modelos, métricas), matplotlib y seaborn (visualizaciones), Streamlit (interfaz web) y joblib (serialización). La integración correcta de todas ellas simultáneamente habría requerido mucho más tiempo de lo disponible para el proyecto.
 
-3. **Referencia a patrones del curso:** se usó el notebook de la clase como referencia (`PorterStemmer`, `CountVectorizer`, `TfidfVectorizer`) para que la IA implementara el mismo patrón pero aplicado al dataset de Kindle Reviews.
+### 2. Reducción de errores de integración
 
-4. **Aprendizaje:** al revisar el código generado se pudo entender cómo cada componente del pipeline interactúa con los demás, lo que complementó lo visto en clase.
+Cada librería tiene sus propias convenciones de API. Por ejemplo, `CountVectorizer` debe ajustarse solo sobre los datos de entrenamiento (`fit_transform`) y solo transformar los de prueba (`transform`), para evitar fuga de datos. La IA conoce estas convenciones y las aplica correctamente por defecto.
+
+### 3. Referencia al notebook de clase
+
+Se usó el notebook de la clase como referencia explícita (patrones con `PorterStemmer`, `CountVectorizer`, `TfidfVectorizer`) y se pidió a la IA implementar los mismos patrones aplicados al dataset de Kindle Reviews en lugar del SMSSpamCollection del notebook.
+
+### 4. Iteración rápida de diseño
+
+El dashboard pasó por múltiples iteraciones de diseño: primero con emojis, luego con iconos Material Design, luego simplificado para que no se vea "generado por IA". Estas iteraciones habrían tomado mucho más tiempo haciendo cambios manuales en las 6 páginas del dashboard.
+
+### 5. Aprendizaje complementario
+
+Al revisar el código generado se pudo entender cómo cada componente del pipeline interactúa: por qué `fit_transform` se usa en train y solo `transform` en test, por qué Naive Bayes falla con TF-IDF, qué hace `CalibratedClassifierCV`, y cómo `sublinear_tf=True` afecta la ponderación de documentos largos.
 
 ---
 
 ## Pruebas realizadas
 
-### 1. Verificación del pipeline de entrenamiento (`main.py`)
-- Se ejecutó el script completo y se verificó que las 12 configuraciones entrenaran sin errores.
-- Se revisó que `results_summary.csv` contenía exactamente 12 filas con valores en rango esperado (accuracy > 0.90).
-- Se verificó que los archivos `.pkl` del modelo se guardaran correctamente.
+### Prueba 1 — Pipeline de entrenamiento completo (`main.py`)
 
-### 2. Prueba del análisis comparativo (`analisis_clase.py`)
-- Se ejecutó el script completo y se verificó la salida impresa para cada una de las 12 secciones.
-- Se comprobó que las 5 gráficas se generaran y guardaran en `outputs/`.
-- Se verificó que los ejemplos de errores de clasificación mostraran textos reales del dataset.
+**Qué se probó:**
+- Ejecución completa del script de inicio a fin sin interrupciones.
+- Verificación de que las 12 configuraciones entrenaran y evaluaran sin errores.
+- Revisión del archivo `outputs/results_summary.csv` generado: 12 filas, valores de accuracy entre 0.94 y 0.97.
+- Verificación de que los 16 archivos PNG de matrices de confusión se generaran correctamente.
+- Verificación de que los archivos `best_model.pkl`, `best_vectorizer.pkl` y `best_config.txt` se guardaran en `model/`.
 
-### 3. Prueba del dashboard (`app.py`)
-- Se navegó por las 6 páginas del dashboard verificando que cargaran sin errores.
-- **Dataset:** se comprobó que las gráficas de distribución y longitud de reseñas aparecieran.
-- **Preprocesamiento:** se probó el pipeline paso a paso con textos en inglés, verificando que cada etapa (limpieza, tokenización, stopwords, stemming/lemmatization) mostrara la transformación correcta.
-- **Resultados:** se verificó que la tabla de 12 configuraciones mostrara los valores correctos con resaltado de máximos y mínimos, y que las matrices de confusión se cargaran para cada configuración seleccionada.
-- **Análisis Comparativo:** se verificó que las gráficas de barras se generaran dinámicamente y que las conclusiones reflejaran los datos reales del CSV.
-- **Demo:** se probaron los 10 ejemplos predefinidos y se introdujeron textos propios para verificar que el modelo clasificara y mostrara el porcentaje de confianza.
+**Resultado:** correcto. Tiempo de ejecución total: aproximadamente 8 minutos.
 
-### 4. Prueba de integración con GitHub
-- Se verificó que el repositorio se subiera correctamente con `git push`.
-- Se comprobó que los archivos excluidos en `.gitignore` (dataset, modelos `.pkl`, entorno virtual) no aparecieran en el repositorio.
+### Prueba 2 — Pipeline en estilo notebook (`analisis_clase.py`)
+
+**Qué se probó:**
+- Ejecución completa del script con preprocesamiento, vectorización, entrenamiento y análisis integrados.
+- Verificación de la salida impresa para cada una de las 12 secciones del script.
+- Verificación de que las 5 gráficas (`clase_heatmap.png`, `clase_bow_vs_tfidf.png`, `clase_stem_vs_lemma.png`, `clase_distribucion_clases.png`, `clase_confusion_matrix.png`) se generaran en `outputs/`.
+- Verificación de que los ejemplos de errores de clasificación mostraran textos reales del dataset de prueba.
+
+**Resultado:** correcto tras corregir el Error 1 descrito más adelante.
+
+### Prueba 3 — Dashboard interactivo (`app.py`)
+
+**Qué se probó por página:**
+
+- **Inicio:** carga correcta, texto visible, botón "Siguiente" funcional.
+- **Dataset:** gráficas de distribución y longitud de reseñas visibles, texto de desbalance correcto.
+- **Preprocesamiento:** pipeline interactivo probado con 5 textos distintos (positivo, negativo, sarcástico, muy corto, con URLs y números). Se verificó que cada paso mostrara la transformación correcta tanto con Stemming como con Lemmatization.
+- **Resultados:** tabla de 12 configuraciones con resaltado correcto de máximos (verde) y mínimos (rojo). Selector de matriz de confusión probado con todas las configuraciones.
+- **Análisis Comparativo:** gráficas generadas dinámicamente desde el CSV, conclusiones revisadas para verificar que reflejen los datos reales.
+- **Demo:** los 10 ejemplos predefinidos probados uno por uno. Textos propios introducidos para verificar la clasificación. Se verificó que el porcentaje de confianza y la barra de probabilidad fueran coherentes con la predicción.
+
+**Resultado:** correcto. Se identificó que el ejemplo "Queja de envío" clasifica como Positivo, lo cual es un comportamiento esperado (error de tipo 3 documentado en el Análisis Comparativo) y no un fallo del modelo.
+
+### Prueba 4 — Repositorio GitHub
+
+**Qué se probó:**
+- Push inicial del código y verificación de que los 36 archivos aparecieran en el repositorio.
+- Verificación de que los archivos excluidos en `.gitignore` no aparecieran: `data/`, `model/*.pkl`, `venv/`, `__pycache__/`.
+- Verificación del historial de commits: solo un commit inicial con `samanthaMora` como autora y committer.
+
+**Resultado:** correcto tras los ajustes descritos en los Errores 3 y 4.
 
 ---
 
 ## Errores encontrados y correcciones
 
-### Error 1 — `TypeError` en `analisis_clase.py`
+### Error 1 — `TypeError` en `analisis_clase.py` al generar la matriz de confusión
 
-**Descripción:** Al generar la matriz de confusión del mejor modelo, el código intentaba acceder a `results["y_pred"][best_idx]` usando una clave de string sobre una lista.
+**Ubicación:** `analisis_clase.py`, sección 11 (generación de gráficas).
 
+**Descripción:** Al intentar generar la matriz de confusión del mejor modelo, el código contenía una expresión que intentaba acceder a `results["y_pred"]` usando una clave de string sobre una variable que era una lista de diccionarios.
+
+**Código con error:**
 ```python
-# Código con error:
 best_pred_arr = np.array(results["y_pred"][best_idx] if isinstance(results, list)
                           else results[best_idx]["y_pred"])
+cm = confusion_matrix(y_test, best_pred)
 ```
 
-**Error:** `TypeError: list indices must be integers or slices, not str`
+**Mensaje de error:**
+```
+TypeError: list indices must be integers or slices, not str
+```
 
-**Corrección:** Se eliminó la línea ya que `best_pred` ya estaba correctamente definido más arriba desde el DataFrame de resultados. La matriz de confusión usaba `best_pred` directamente.
+**Causa:** La condición `isinstance(results, list)` evalúa como `True`, así que el intérprete ejecuta `results["y_pred"][best_idx]`, pero `results` es una lista y no acepta índices de string.
+
+**Corrección:** La variable `best_pred` ya estaba correctamente definida más arriba a partir del DataFrame de resultados. La línea entera era innecesaria y se eliminó:
 
 ```python
-# Corrección: eliminar la línea innecesaria y usar best_pred directamente
-cm = confusion_matrix(y_test, best_pred)
+# Se eliminó la línea con error
+cm = confusion_matrix(y_test, best_pred)  # best_pred ya existe
 ```
 
 ---
 
 ### Error 2 — `ModuleNotFoundError` al ejecutar los scripts
 
-**Descripción:** Al intentar ejecutar `analisis_clase.py` con el Python del sistema (`/opt/homebrew/opt/python@3.14`), los módulos `pandas`, `seaborn`, `nltk` y `scikit-learn` no estaban instalados.
+**Descripción:** Al intentar ejecutar `analisis_clase.py` con el Python por defecto del sistema (`/opt/homebrew/opt/python@3.14`), los módulos `pandas`, `seaborn`, `nltk` y `scikit-learn` no estaban disponibles.
 
-**Error:** `ModuleNotFoundError: No module named 'pandas'`
+**Mensaje de error:**
+```
+ModuleNotFoundError: No module named 'pandas'
+```
 
-**Causa:** La Mac tiene múltiples instalaciones de Python (sistema, Anaconda, Homebrew) y los paquetes estaban instalados en el entorno de Anaconda (`curso_bigdata`), no en el Python del sistema.
+**Causa:** La Mac tenía múltiples instalaciones de Python (sistema Homebrew en Python 3.14, Anaconda con Python 3.9 en el entorno `curso_bigdata`). Los paquetes necesarios estaban instalados en el entorno de Anaconda, no en el Python del sistema que el terminal usaba por defecto.
 
-**Corrección:** Se creó un entorno virtual propio dentro del proyecto:
+**Corrección:** Se creó un entorno virtual propio dentro del proyecto para aislar las dependencias:
 
 ```bash
 python3 -m venv venv
 venv/bin/pip install pandas numpy scikit-learn nltk matplotlib seaborn streamlit joblib
 ```
 
-A partir de ese punto todos los scripts se ejecutan con `venv/bin/python3` y el dashboard con `venv/bin/streamlit run app.py`.
+A partir de ese punto todos los scripts se ejecutan con `venv/bin/python3` y el dashboard con `venv/bin/streamlit run app.py`, independientemente de qué Python esté instalado en el sistema.
 
 ---
 
 ### Error 3 — Claude aparecía como contribuidor en GitHub
 
-**Descripción:** El primer commit incluía la línea `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>` en el mensaje, lo que hizo que GitHub registrara a "claude" como contribuidor del repositorio.
+**Descripción:** El primer commit subido a GitHub incluía la línea `Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>` en el mensaje, lo que hizo que GitHub registrara automáticamente a la cuenta "claude" como contribuidor del repositorio.
 
-**Corrección (intento 1):** Se hizo `git commit --amend` para eliminar la línea y `git push --force`. GitHub no actualizó la lista de contribuidores porque ya había procesado el primer push.
+**Corrección (intento 1 — fallido):** Se enmendó el commit con `git commit --amend` para eliminar la línea `Co-Authored-By` y se hizo `git push --force`. GitHub no actualizó la lista de contribuidores porque ya había procesado e indexado el primer push antes del force push.
 
-**Corrección (definitiva):** Se eliminó el repositorio en GitHub y se creó uno nuevo. Se usó `git checkout --orphan` para crear un historial limpio sin ningún commit anterior, asegurando que el autor y committer fueran exclusivamente `samanthaMora`:
+**Corrección (definitiva):** Se eliminó el repositorio desde la interfaz de GitHub y se creó uno nuevo. Se utilizó `git checkout --orphan` para crear un historial completamente limpio sin ningún commit anterior, forzando explícitamente la identidad del autor y el committer:
 
 ```bash
 git checkout --orphan limpio
-GIT_AUTHOR_NAME="samanthaMora" GIT_AUTHOR_EMAIL="..." \
-GIT_COMMITTER_NAME="samanthaMora" GIT_COMMITTER_EMAIL="..." \
+GIT_AUTHOR_NAME="samanthaMora" GIT_AUTHOR_EMAIL="samantha.mora@edu.uag.mx" \
+GIT_COMMITTER_NAME="samanthaMora" GIT_COMMITTER_EMAIL="samantha.mora@edu.uag.mx" \
 git commit -m "Sentiment Analysis — NLP pipeline completo"
 git push --force origin limpio:main
 ```
 
 ---
 
-### Error 4 — Imposibilidad de eliminar el repositorio via API
+### Error 4 — No se pudo eliminar el repositorio via API de GitHub
 
-**Descripción:** Al intentar eliminar el repositorio de GitHub con la API REST usando el token generado, la solicitud devolvió un error 403.
+**Descripción:** Al intentar eliminar el repositorio de GitHub usando la API REST con el token de acceso personal, la solicitud fue rechazada con un error 403.
 
-**Error:** `{"message": "Must have admin rights to Repository.", "status": "403"}`
+**Solicitud realizada:**
+```bash
+curl -X DELETE \
+  -H "Authorization: token <TOKEN>" \
+  https://api.github.com/repos/sdelamoral/Parcial-3-Mineria-
+```
 
-**Causa:** El token de acceso personal fue creado con el scope `repo` pero sin el scope `delete_repo`, que es necesario para eliminar repositorios via API.
+**Respuesta:**
+```json
+{"message": "Must have admin rights to Repository.", "status": "403"}
+```
 
-**Corrección:** Se eliminó el repositorio manualmente desde la interfaz de GitHub (Settings → Danger Zone → Delete this repository) y se recreó con el nombre correcto.
+**Causa:** El token fue generado con el scope `repo` (acceso completo a repositorios) pero sin el scope adicional `delete_repo`, que es obligatorio para eliminar repositorios via API aunque el usuario sea el propietario.
+
+**Corrección:** Se eliminó el repositorio manualmente desde la interfaz web de GitHub (Settings → Danger Zone → Delete this repository) y se creó un repositorio nuevo con el nombre correcto. Luego se hizo push del historial limpio al nuevo repositorio.
 
 ---
 
-## Dependencias
+## Limitaciones del sistema
 
-```
-pandas>=2.0.0
-numpy>=1.24.0
-scikit-learn>=1.3.0
-nltk>=3.8.0
-matplotlib>=3.7.0
-seaborn>=0.12.0
-streamlit>=1.31.0
-joblib
-kagglehub>=0.2.0
-```
+1. **Desbalance de clases:** el recall de reseñas negativas es bajo (~0.58 con el mejor modelo). Para mejorar esto se podría aplicar `class_weight='balanced'` en SVM y Logistic Regression, o técnicas de oversampling como SMOTE.
+
+2. **Sin captura de contexto:** BoW y TF-IDF no capturan orden de palabras, negaciones compuestas (*"not at all bad"*), adversativos (*"good but disappointing"*) ni sarcasmo. El modelo falla en estos casos.
+
+3. **Solo inglés:** el pipeline usa stopwords y recursos morfológicos específicos para inglés. No funciona con reseñas en otros idiomas.
+
+4. **Sin actualización del modelo:** el modelo está entrenado sobre una muestra fija de 50,000 reseñas. Reseñas con vocabulario nuevo o estilos de escritura más recientes podrían no clasificarse correctamente.
+
+---
+
+## Trabajo futuro
+
+- Aplicar `class_weight='balanced'` para mejorar el recall de reseñas negativas.
+- Explorar modelos de embeddings contextuales (BERT, DistilBERT, RoBERTa) que capturan contexto y negación.
+- Implementar bigramas de negación como features explícitas (*"not good"*, *"never again"*).
+- Agregar una etapa de detección de tópico para filtrar reseñas que no hablan del libro (quejas de envío, problemas de suscripción).
+- Evaluar el rendimiento con el dataset completo (982,619 reseñas) en lugar de la muestra de 50,000.
+
+---
+
+## Referencias
+
+- Bird, S., Klein, E., & Loper, E. (2009). *Natural Language Processing with Python*. O'Reilly Media.
+- Manning, C. D., & Schütze, H. (1999). *Foundations of Statistical Natural Language Processing*. MIT Press.
+- Scikit-learn documentation: https://scikit-learn.org/stable/
+- NLTK documentation: https://www.nltk.org/
+- Streamlit documentation: https://docs.streamlit.io/
+- Kaggle dataset: https://www.kaggle.com/datasets/bharadwaj6/kindle-reviews
 
 ---
 
