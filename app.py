@@ -26,6 +26,53 @@ st.set_page_config(
     layout="wide",
 )
 
+st.markdown("""
+<style>
+    /* Sidebar */
+    [data-testid="stSidebar"] {
+        background-color: #0a2342;
+    }
+    [data-testid="stSidebar"] * {
+        color: #c8dff0 !important;
+    }
+    [data-testid="stSidebar"] .stButton > button {
+        background-color: transparent;
+        border: 1px solid #2e6da4;
+        color: #c8dff0 !important;
+        border-radius: 6px;
+    }
+    [data-testid="stSidebar"] .stButton > button:hover {
+        background-color: #1e3a5f;
+        border-color: #4a9fd4;
+    }
+    /* Primary buttons */
+    .stButton > button[kind="primary"] {
+        background-color: #2e6da4;
+        border: none;
+        color: #ffffff !important;
+        border-radius: 6px;
+    }
+    .stButton > button[kind="primary"]:hover {
+        background-color: #1e3a5f;
+    }
+    /* Titles */
+    h1 { color: #0a2342 !important; }
+    h2, h3, h4 { color: #1e3a5f !important; }
+    /* Tabs */
+    .stTabs [data-baseweb="tab"] {
+        color: #2e6da4;
+    }
+    .stTabs [aria-selected="true"] {
+        border-bottom: 2px solid #2e6da4;
+        color: #0a2342 !important;
+    }
+    /* Top bar accent line */
+    header[data-testid="stHeader"] {
+        background-color: #0a2342;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 
 OUTPUT_DIR = "outputs"
 MODEL_DIR  = "model"
@@ -279,8 +326,8 @@ elif pagina == "Resultados":
     display.columns = ["Configuracion","Accuracy","Precision","Recall","F1"]
     st.dataframe(
         display.style
-            .highlight_max(subset=["Accuracy","Precision","Recall","F1"], color="#d4edda")
-            .highlight_min(subset=["Accuracy","Precision","Recall","F1"], color="#f8d7da")
+            .highlight_max(subset=["Accuracy","Precision","Recall","F1"], color="#c8dff0")
+            .highlight_min(subset=["Accuracy","Precision","Recall","F1"], color="#ddeaf7")
             .format({"Accuracy":"{:.4f}","Precision":"{:.4f}","Recall":"{:.4f}","F1":"{:.4f}"}),
         use_container_width=True, hide_index=True,
     )
@@ -343,7 +390,7 @@ elif pagina == "Analisis Comparativo":
 
         fig, ax = plt.subplots(figsize=(7, 3.5))
         df.groupby(["modelo","vec"])["f1"].mean().unstack("vec").plot(
-            kind="bar", ax=ax, color=["#4c72b0","#dd8452"], edgecolor="white", width=0.6
+            kind="bar", ax=ax, color=["#0a2342","#4a9fd4"], edgecolor="white", width=0.6
         )
         ax.set_title("F1 promedio: BoW vs TF-IDF por modelo", pad=12)
         ax.set_ylabel("F1-score"); ax.set_ylim(0.88, 0.98)
@@ -370,7 +417,7 @@ elif pagina == "Analisis Comparativo":
 
         fig, ax = plt.subplots(figsize=(7, 3.5))
         df.groupby(["modelo","prep"])["f1"].mean().unstack("prep").plot(
-            kind="bar", ax=ax, color=["#55a868","#c44e52"], edgecolor="white", width=0.6
+            kind="bar", ax=ax, color=["#1e3a5f","#2e6da4"], edgecolor="white", width=0.6
         )
         ax.set_title("F1 promedio: Stemming vs Lemmatization por modelo", pad=12)
         ax.set_ylabel("F1-score"); ax.set_ylim(0.88, 0.98)
@@ -531,8 +578,8 @@ elif pagina == "Demo":
                 st.error(f"NEGATIVO  —  confianza {proba[0]*100:.1f}%", icon=":material/thumb_down:")
 
             fig, ax = plt.subplots(figsize=(6, 0.8))
-            ax.barh([""], [proba[1]], color="#28a745", label="Positivo")
-            ax.barh([""], [proba[0]], left=[proba[1]], color="#dc3545", label="Negativo")
+            ax.barh([""], [proba[1]], color="#2e6da4", label="Positivo")
+            ax.barh([""], [proba[0]], left=[proba[1]], color="#0a2342", label="Negativo")
             ax.set_xlim(0, 1)
             ax.set_xticks([0, .25, .5, .75, 1])
             ax.set_xticklabels(["0%","25%","50%","75%","100%"])
