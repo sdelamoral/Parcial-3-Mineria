@@ -578,7 +578,7 @@ Ambos fragmentos consultados a la IA fueron revisados línea a línea antes de i
 **Qué se probó:**
 - Push inicial del código y verificación de que los 36 archivos aparecieran en el repositorio.
 - Verificación de que los archivos excluidos en `.gitignore` no aparecieran: `data/`, `model/*.pkl`, `venv/`, `__pycache__/`.
-- Verificación del historial de commits: solo un commit inicial con `samanthaMora` como autora y committer.
+- Verificación del historial de commits: solo commits de la autora, sin contribuidores externos.
 
 **Resultado:** correcto tras los ajustes descritos en los Errores 3 y 4.
 
@@ -723,10 +723,3 @@ El tiempo de respuesta de la app bajó a menos de un segundo tras el cambio.
 - Streamlit documentation: https://docs.streamlit.io/
 - Kaggle dataset: https://www.kaggle.com/datasets/bharadwaj6/kindle-reviews
 
----
-
-## Autora
-
-**Samantha de la Mora**  
-Minería de Datos — Universidad Autónoma de Guadalajara  
-2026
