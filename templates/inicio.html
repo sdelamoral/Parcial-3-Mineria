@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Sentiment Analysis sobre reseñas de Kindle</h1>
+
+<p class="lead">
+  Este proyecto entrena un sistema capaz de leer reseñas de libros en inglés
+  y determinar automáticamente si el sentimiento expresado es <strong>positivo</strong> o <strong>negativo</strong>.
+</p>
+<p>
+  Se evaluaron <strong>12 configuraciones</strong> combinando tres modelos (Naive Bayes, Logistic Regression, SVM),
+  dos técnicas de preprocesamiento (Stemming y Lemmatization) y dos representaciones vectoriales
+  (Bag-of-Words y TF-IDF). La mejor combinación fue <strong>SVM + Lemmatization + TF-IDF</strong>
+  con un F1-score de <strong>0.9629</strong> sobre 50,000 reseñas del dataset de Amazon Kindle (Kaggle).
+</p>
+
+<hr>
+<h4 class="mb-3">¿Qué hay en cada sección?</h4>
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header">Dataset</div>
+      <div class="card-body">De dónde vienen los datos, cómo se etiquetaron los sentimientos y cuál es el problema principal del corpus.</div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header">Preprocesamiento</div>
+      <div class="card-body">Escribe cualquier texto y observa cómo el pipeline lo transforma paso a paso antes de llegar al modelo.</div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header">Resultados</div>
+      <div class="card-body">Tabla con las métricas de las 12 configuraciones y matrices de confusión para explorar cada una.</div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header">Analisis Comparativo</div>
+      <div class="card-body">Conclusiones sobre qué representación ganó, qué modelo funcionó mejor y qué errores comete el clasificador.</div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header">Demo</div>
+      <div class="card-body">Clasifica cualquier reseña en inglés en tiempo real usando el mejor modelo entrenado.</div>
+    </div>
+  </div>
+</div>
+
+<div class="next-btn">
+  <a href="{{ url_for('dataset') }}" class="btn btn-navy">Siguiente: Dataset →</a>
+</div>
+{% endblock %}

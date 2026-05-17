@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Dataset</h1>
+
+<p>
+  El dataset proviene de <strong>Amazon Kindle Reviews (Kaggle)</strong> y contiene 982,619 reseñas originales.
+  Para este proyecto se trabajó con una muestra de <strong>50,000 reseñas</strong> usando solo las columnas
+  <code>reviewText</code> y <code>overall</code>.
+</p>
+<p>
+  Las calificaciones se convirtieron a sentimiento binario: ratings 1-2 → <strong>Negativo (0)</strong>,
+  ratings 4-5 → <strong>Positivo (1)</strong>, ratings 3 descartados por ambiguos.
+</p>
+
+{% if imgs.dist %}
+<img src="data:image/png;base64,{{ imgs.dist }}" class="img-fluid rounded my-3">
+{% endif %}
+{% if imgs.len %}
+<img src="data:image/png;base64,{{ imgs.len }}" class="img-fluid rounded my-3">
+{% endif %}
+
+<div class="card mt-3">
+  <div class="card-header">Desbalance de clases</div>
+  <div class="card-body">
+    El problema más importante del dataset es el desbalance severo: el <strong>93.4%</strong> de las
+    reseñas son positivas y solo el <strong>6.6%</strong> son negativas (ratio 14:1). Un modelo que
+    siempre prediga "Positivo" alcanzaría 93.4% de accuracy sin aprender nada útil.
+    Por eso se usó <strong>F1-score</strong> como métrica principal.
+  </div>
+</div>
+
+<div class="next-btn">
+  <a href="{{ url_for('preprocesamiento') }}" class="btn btn-navy">Siguiente: Preprocesamiento →</a>
+</div>
+{% endblock %}

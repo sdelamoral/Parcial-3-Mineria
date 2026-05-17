@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Análisis Comparativo</h1>
+
+{% if error %}
+  <div class="alert alert-warning">Ejecuta <code>python3 main.py</code> primero.</div>
+{% else %}
+
+<ul class="nav nav-tabs mb-4" id="tabs">
+  <li class="nav-item"><a class="nav-link active" data-bs-toggle="tab" href="#tab1">BoW vs TF-IDF</a></li>
+  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab2">Stemming vs Lemmatization</a></li>
+  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab3">Comparacion de modelos</a></li>
+  <li class="nav-item"><a class="nav-link" data-bs-toggle="tab" href="#tab4">Errores de clasificacion</a></li>
+</ul>
+
+<div class="tab-content">
+
+  <div class="tab-pane fade show active" id="tab1">
+    <img src="data:image/png;base64,{{ chart_bow }}" class="img-fluid rounded mb-3">
+    <p>
+      En promedio, <strong>BoW obtuvo F1 = {{ "%.4f"|format(bow_f1) }}</strong> y
+      <strong>TF-IDF obtuvo F1 = {{ "%.4f"|format(tfidf_f1) }}</strong>.
+      BoW gana en el promedio general, pero eso se debe a que Naive Bayes colapsa con TF-IDF
+      (F1 = 0.918) porque MultinomialNB espera frecuencias enteras y TF-IDF produce valores
+      continuos que violan ese supuesto.
+    </p>
+    <p>
+      Si se comparan solo SVM y Logistic Regression, TF-IDF es superior: penaliza palabras
+      muy comunes como <em>"book"</em> o <em>"read"</em> que no aportan información sobre el sentimiento.
+    </p>
+  </div>
+
+  <div class="tab-pane fade" id="tab2">
+    <img src="data:image/png;base64,{{ chart_stem }}" class="img-fluid rounded mb-3">
+    <p>
+      La diferencia entre Stemming (F1 = {{ "%.4f"|format(sm) }}) y
+      Lemmatization (F1 = {{ "%.4f"|format(lm) }}) es prácticamente insignificante
+      ({{ "%+.4f"|format(diff) }}). Para este corpus ambos métodos producen vocabularios igualmente útiles.
+    </p>
+    <p>
+      Stemming recorta sufijos agresivamente y puede producir tokens que no son palabras reales
+      (<em>"specif"</em>, <em>"becam"</em>), mientras que Lemmatization siempre devuelve la forma
+      canónica del diccionario. Lemmatization es preferible si se necesita interpretar qué palabras
+      pesan más en el modelo.
+    </p>
+  </div>
+
+  <div class="tab-pane fade" id="tab3">
+    <img src="data:image/png;base64,{{ chart_hm }}" class="img-fluid rounded mb-3">
+    <p>
+      <strong>SVM</strong> es el mejor modelo con F1 máximo de {{ "%.4f"|format(stats.loc['SVM','max']) }}.
+      Funciona bien en espacios de alta dimensión como el que generan BoW y TF-IDF (20,000 features).
+    </p>
+    <p>
+      <strong>Logistic Regression</strong> queda muy cerca con F1 de {{ "%.4f"|format(stats.loc['Logistic Regression','max']) }}
+      y es mucho más rápido en inferencia. Es una alternativa viable si el tiempo de respuesta importa.
+    </p>
+    <p>
+      <strong>Naive Bayes</strong> rinde bien con BoW pero es el peor con TF-IDF.
+      Su F1 mínimo es {{ "%.4f"|format(stats.loc['Naive Bayes','min']) }}.
+    </p>
+  </div>
+
+  <div class="tab-pane fade" id="tab4">
+    <p>Analizando las predicciones incorrectas del mejor modelo se identificaron cuatro patrones:</p>
+    <div class="accordion" id="errores">
+      {% for tipo, desc, ej, verd, pred in errores %}
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#err{{ loop.index }}">
+            {{ tipo }}
+          </button>
+        </h2>
+        <div id="err{{ loop.index }}" class="accordion-collapse collapse" data-bs-parent="#errores">
+          <div class="accordion-body">
+            <p>{{ desc }}</p>
+            <pre>{{ ej }}</pre>
+            <div class="row g-2">
+              <div class="col"><div class="result-pos"><strong>Real:</strong> {{ verd }}</div></div>
+              <div class="col"><div class="result-neg"><strong>Predijo:</strong> {{ pred }}</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="alert mt-3" style="background:#ddeaf7;border-left:4px solid #2e6da4">
+      BoW y TF-IDF no capturan orden de palabras, negaciones compuestas ni figuras retóricas.
+      Un modelo basado en embeddings contextuales como BERT reduciría significativamente estos errores.
+    </div>
+  </div>
+
+</div>
+{% endif %}
+
+<div class="next-btn">
+  <a href="{{ url_for('demo') }}" class="btn btn-navy">Siguiente: Demo →</a>
+</div>
+{% endblock %}

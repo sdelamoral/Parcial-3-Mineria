@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Demo</h1>
+
+{% if error %}
+  <div class="alert alert-warning">Ejecuta <code>python3 main.py</code> primero para generar el modelo.</div>
+{% else %}
+
+<p class="text-muted">Modelo: {{ model_label }} &nbsp;·&nbsp; F1 = {{ model_f1 }}</p>
+
+<h5 class="mb-2">Ejemplos rápidos:</h5>
+<form method="POST" id="form-demo">
+  <div class="row g-2 mb-3">
+    {% for nombre in ejemplos.keys() %}
+    <div class="col-6 col-md-4 col-lg-2">
+      <button type="submit" name="ejemplo" value="{{ nombre }}"
+              class="btn btn-sm w-100"
+              style="background:#ddeaf7;border:1px solid #2e6da4;color:#0a2342;font-size:0.78rem">
+        {{ nombre }}
+      </button>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="mb-3">
+    <label class="form-label fw-semibold">Reseña en inglés:</label>
+    <textarea name="texto" class="form-control" rows="4"
+              placeholder="Write a book review in English...">{{ texto }}</textarea>
+  </div>
+  <button type="submit" name="ejemplo" value="" class="btn btn-navy">Clasificar</button>
+</form>
+
+{% if res %}
+<hr class="my-4">
+{% if res.pred == 1 %}
+  <div class="result-pos mb-3">
+    <strong style="font-size:1.1rem">POSITIVO</strong> &nbsp;—&nbsp; confianza {{ "%.1f"|format(res.proba_pos) }}%
+  </div>
+{% else %}
+  <div class="result-neg mb-3">
+    <strong style="font-size:1.1rem">NEGATIVO</strong> &nbsp;—&nbsp; confianza {{ "%.1f"|format(res.proba_neg) }}%
+  </div>
+{% endif %}
+
+<img src="data:image/png;base64,{{ res.chart }}" class="img-fluid rounded mb-3" style="max-width:500px">
+
+<details>
+  <summary style="cursor:pointer;color:#2e6da4">Ver texto preprocesado</summary>
+  <pre class="mt-2">{{ res.proc }}</pre>
+</details>
+{% endif %}
+
+{% endif %}
+{% endblock %}

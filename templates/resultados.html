@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Resultados</h1>
+
+{% if error %}
+  <div class="alert alert-warning">Ejecuta <code>python3 main.py</code> primero para generar los resultados.</div>
+{% else %}
+
+<p>
+  Se evaluaron 12 configuraciones: 3 modelos × 2 preprocesadores × 2 vectorizadores.<br>
+  La mejor fue <strong>{{ best['label'] }}</strong> con F1 de <code>{{ "%.4f"|format(best['f1']) }}</code>
+  y accuracy de <code>{{ "%.4f"|format(best['accuracy']) }}</code>.
+</p>
+
+<div class="table-responsive mb-4">
+  <table class="table table-hover table-sm">
+    <thead><tr><th>Configuracion</th><th>Accuracy</th><th>Precision</th><th>Recall</th><th>F1</th></tr></thead>
+    <tbody>
+      {% for r in tabla %}
+      <tr {% if loop.first %}style="background:#c8dff0;font-weight:600"{% endif %}>
+        <td>{{ r.Configuracion }}</td>
+        <td>{{ "%.4f"|format(r.Accuracy) }}</td>
+        <td>{{ "%.4f"|format(r.Precision) }}</td>
+        <td>{{ "%.4f"|format(r.Recall) }}</td>
+        <td>{{ "%.4f"|format(r.F1) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if chart %}
+<img src="data:image/png;base64,{{ chart }}" class="img-fluid rounded mb-4">
+{% endif %}
+
+<h4>Matriz de confusión</h4>
+<p class="text-muted">Selecciona una configuración para ver cómo clasifica cada clase.</p>
+<form method="GET" class="mb-3">
+  <select name="config" class="form-select w-auto d-inline" onchange="this.form.submit()">
+    {% for c in configs %}
+    <option value="{{ c }}" {{ 'selected' if c==selected }}>{{ c }}</option>
+    {% endfor %}
+  </select>
+</form>
+
+{% if cm_b64 and row is not none %}
+<div class="row align-items-center">
+  <div class="col-md-6">
+    <img src="data:image/png;base64,{{ cm_b64 }}" class="img-fluid rounded">
+  </div>
+  <div class="col-md-6">
+    <p>La diagonal principal son las predicciones correctas. Un valor alto en la esquina inferior izquierda indica que el modelo falla detectando reseñas negativas, esperable dado el desbalance del dataset.</p>
+    <table class="table table-sm table-bordered w-auto">
+      <thead><tr><th>Métrica</th><th>Valor</th></tr></thead>
+      <tbody>
+        <tr><td>Accuracy</td><td>{{ "%.4f"|format(row['accuracy']) }}</td></tr>
+        <tr><td>Precision</td><td>{{ "%.4f"|format(row['precision']) }}</td></tr>
+        <tr><td>Recall</td><td>{{ "%.4f"|format(row['recall']) }}</td></tr>
+        <tr><td>F1-score</td><td>{{ "%.4f"|format(row['f1']) }}</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% endif %}
+
+<div class="next-btn">
+  <a href="{{ url_for('analisis') }}" class="btn btn-navy">Siguiente: Analisis Comparativo →</a>
+</div>
+{% endblock %}

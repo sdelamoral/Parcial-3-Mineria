@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Preprocesamiento NLP</h1>
+<p>Escribe un texto y observa cómo el pipeline lo transforma paso a paso.</p>
+
+<div class="row">
+  <div class="col-lg-7">
+    <form method="POST">
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Texto de prueba:</label>
+        <textarea name="texto" class="form-control" rows="4">{{ texto }}</textarea>
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Método de reducción:</label><br>
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="radio" name="metodo" value="stem" id="stem" {{ 'checked' if metodo=='stem' }}>
+          <label class="form-check-label" for="stem">Stemming (PorterStemmer)</label>
+        </div>
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="radio" name="metodo" value="lemma" id="lemma" {{ 'checked' if metodo=='lemma' }}>
+          <label class="form-check-label" for="lemma">Lemmatization (WordNetLemmatizer)</label>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-navy">Procesar</button>
+    </form>
+  </div>
+
+  <div class="col-lg-5">
+    <h5>Stemming vs Lemmatization</h5>
+    <table class="table table-sm table-bordered">
+      <thead><tr><th></th><th>Stemming</th><th>Lemmatization</th></tr></thead>
+      <tbody>
+        <tr><td>Velocidad</td><td>Rápido</td><td>Lento</td></tr>
+        <tr><td>Output</td><td>Puede no ser palabra real</td><td>Siempre palabra válida</td></tr>
+        <tr><td>'loved'</td><td>love</td><td>loved</td></tr>
+        <tr><td>'running'</td><td>run</td><td>running</td></tr>
+        <tr><td>'specifically'</td><td>specif</td><td>specifically</td></tr>
+      </tbody>
+    </table>
+    <small class="text-muted">La diferencia en F1 entre ambos métodos fue de solo 0.0005 en este proyecto.</small>
+  </div>
+</div>
+
+{% if res %}
+<hr>
+<div class="row g-3 mt-1">
+  <div class="col-md-6">
+    <h5>Original</h5>
+    <pre>{{ texto }}</pre>
+  </div>
+  <div class="col-md-6">
+    <h5>Limpieza</h5>
+    <pre>{{ res.limpio }}</pre>
+  </div>
+  <div class="col-12">
+    <h5>Tokenización</h5>
+    <pre>{{ res.tokens }}</pre>
+  </div>
+  <div class="col-12">
+    <h5>Sin stopwords <small class="text-muted">(eliminadas: {{ res.eliminadas }})</small></h5>
+    <pre>{{ res.tokens_ns }}</pre>
+  </div>
+  <div class="col-12">
+    <h5>{{ "Stemming" if metodo=="stem" else "Lemmatization" }}</h5>
+    <pre>{{ res.final }}</pre>
+  </div>
+  <div class="col-12">
+    <h5>Texto final al vectorizador:</h5>
+    <div class="result-pos">{{ res.texto_final }}</div>
+  </div>
+</div>
+{% endif %}
+
+<div class="next-btn">
+  <a href="{{ url_for('resultados') }}" class="btn btn-navy">Siguiente: Resultados →</a>
+</div>
+{% endblock %}
