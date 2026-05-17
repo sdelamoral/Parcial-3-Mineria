@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Sentiment Analysis — Kindle Reviews</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20,300,0,0" rel="stylesheet">
   <style>
     body { background: #f5f8fc; color: #0a2342; font-family: sans-serif; }
 
@@ -58,21 +58,24 @@
     /* Table */
     .table thead th { background: #0a2342; color: #c8dff0; }
 
-    /* Nav icons */
-    .nav-icon { font-size: 1rem; }
+    .material-symbols-outlined {
+      font-size: 1.1rem;
+      vertical-align: middle;
+      line-height: 1;
+    }
   </style>
 </head>
 <body>
 
 <div id="sidebar">
-  <div class="brand"><i class="bi bi-book me-2"></i>Sentiment Analysis</div>
+  <div class="brand"><span class="material-symbols-outlined me-2" style="font-size:1.2rem">auto_stories</span>Sentiment Analysis</div>
   <div class="sub">Kindle Reviews · NLP Pipeline</div>
-  <a href="{{ url_for('inicio') }}"           class="{{ 'active' if request.endpoint=='inicio' }}"><i class="bi bi-house"></i> Inicio</a>
-  <a href="{{ url_for('dataset') }}"          class="{{ 'active' if request.endpoint=='dataset' }}"><i class="bi bi-bar-chart"></i> Dataset</a>
-  <a href="{{ url_for('preprocesamiento') }}" class="{{ 'active' if request.endpoint=='preprocesamiento' }}"><i class="bi bi-type"></i> Preprocesamiento</a>
-  <a href="{{ url_for('resultados') }}"       class="{{ 'active' if request.endpoint=='resultados' }}"><i class="bi bi-graph-up"></i> Resultados</a>
-  <a href="{{ url_for('analisis') }}"         class="{{ 'active' if request.endpoint=='analisis' }}"><i class="bi bi-search"></i> Analisis Comparativo</a>
-  <a href="{{ url_for('demo') }}"             class="{{ 'active' if request.endpoint=='demo' }}"><i class="bi bi-play-circle"></i> Demo</a>
+  <a href="{{ url_for('inicio') }}"           class="{{ 'active' if request.endpoint=='inicio' }}"><span class="material-symbols-outlined">home</span> Inicio</a>
+  <a href="{{ url_for('dataset') }}"          class="{{ 'active' if request.endpoint=='dataset' }}"><span class="material-symbols-outlined">bar_chart</span> Dataset</a>
+  <a href="{{ url_for('preprocesamiento') }}" class="{{ 'active' if request.endpoint=='preprocesamiento' }}"><span class="material-symbols-outlined">text_fields</span> Preprocesamiento</a>
+  <a href="{{ url_for('resultados') }}"       class="{{ 'active' if request.endpoint=='resultados' }}"><span class="material-symbols-outlined">trending_up</span> Resultados</a>
+  <a href="{{ url_for('analisis') }}"         class="{{ 'active' if request.endpoint=='analisis' }}"><span class="material-symbols-outlined">manage_search</span> Analisis Comparativo</a>
+  <a href="{{ url_for('demo') }}"             class="{{ 'active' if request.endpoint=='demo' }}"><span class="material-symbols-outlined">play_circle</span> Demo</a>
 </div>
 
 <div id="main">
