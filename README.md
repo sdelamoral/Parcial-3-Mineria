@@ -384,7 +384,7 @@ La diferencia es **mínima (+0.0005)** — ambos métodos son prácticamente equ
 
 ## Dashboard interactivo
 
-La aplicación Streamlit (`app.py`) está organizada en 6 secciones accesibles desde el menú lateral:
+La aplicación web (`flask_app.py`) está construida con **Flask** y organizada en 6 secciones accesibles desde el menú lateral:
 
 | Sección | Contenido |
 |---|---|
@@ -398,8 +398,8 @@ La aplicación Streamlit (`app.py`) está organizada en 6 secciones accesibles d
 Para lanzar el dashboard:
 
 ```bash
-venv/bin/streamlit run app.py
-# → http://localhost:8501
+venv/bin/python3 flask_app.py
+# → http://localhost:8080
 ```
 
 ---
@@ -436,7 +436,16 @@ P3 Mini Proyecto/
 ├── analisis_comparativo.py             # Análisis comparativo leyendo desde results_summary.csv
 ├── analisis_clase.py                   # Pipeline completo en estilo notebook de clase
 ├── download_data.py                    # Descarga del dataset via kagglehub
-├── app.py                              # Dashboard interactivo (Streamlit)
+├── app.py                              # Dashboard Streamlit (versión alternativa)
+├── flask_app.py                        # Dashboard interactivo principal (Flask)
+├── templates/                          # Plantillas HTML del dashboard Flask
+│   ├── base.html                       # Layout base con sidebar y estilos
+│   ├── inicio.html
+│   ├── dataset.html
+│   ├── preprocesamiento.html
+│   ├── resultados.html
+│   ├── analisis.html
+│   └── demo.html
 ├── requirements.txt                    # Dependencias del proyecto
 └── README.md                           # Este archivo
 ```
@@ -476,10 +485,10 @@ python main.py
 # Tiempo estimado: 5–15 minutos dependiendo del hardware
 
 # 7. Lanzar el dashboard interactivo
-venv/bin/streamlit run app.py
+venv/bin/python3 flask_app.py
 ```
 
-El dashboard queda disponible en `http://localhost:8501`.
+El dashboard queda disponible en `http://localhost:8080`.
 
 ### Scripts adicionales
 
@@ -502,7 +511,7 @@ Se utilizó **Claude (Anthropic)** como herramienta de apoyo puntual, principalm
 | Archivo | Parte específica generada | Motivo |
 |---|---|---|
 | `src/models.py` | Envoltorio `CalibratedClassifierCV` alrededor de `LinearSVC` | `LinearSVC` no expone `predict_proba`; se consultó cómo obtener probabilidades de clase |
-| `app.py` | Función `@st.cache_resource` para cachear los recursos NLP | Se consultó cómo evitar que los objetos se reinicializaran en cada interacción |
+| `flask_app.py` | Patrón de caché global con variables de módulo para los recursos NLP | Se consultó cómo evitar que los objetos se reinicializaran en cada petición |
 
 ### Escrito por el estudiante (~85%)
 
@@ -516,7 +525,7 @@ Todo el núcleo del pipeline NLP fue implementado directamente a partir del note
 - **`main.py`** — Orquestador del pipeline con las 12 configuraciones (3 modelos × 2 preprocesadores × 2 vectorizadores) y selección del mejor modelo.
 - **`analisis_clase.py`** — Pipeline en estilo notebook con las 12 secciones del trabajo, adaptado del notebook de clase al dataset de Kindle Reviews.
 - **`analisis_comparativo.py`** — Script de análisis comparativo con conclusiones redactadas por el estudiante.
-- **`app.py`** — Estructura completa del dashboard (6 páginas, navegación, visualizaciones, demo en tiempo real); solo la función de caché fue consultada a la IA.
+- **`flask_app.py` y `templates/`** — Estructura completa del dashboard Flask (6 páginas, navegación, visualizaciones, demo en tiempo real); solo el patrón de caché global fue consultado a la IA.
 - **Todas las decisiones de diseño:** selección del dataset, criterio de binarización, número de configuraciones, estructura del dashboard, interpretación de resultados y conclusiones.
 
 ---
@@ -529,7 +538,7 @@ Al implementar la página Demo del dashboard se necesitaba mostrar el porcentaje
 
 ### 2. Depuración de un bug de rendimiento
 
-La app tardaba varios segundos en responder porque los recursos de NLTK (stopwords, stemmer, lemmatizer) se reinicializaban en cada interacción. Se consultó a la IA cómo cachear objetos en Streamlit y se aplicó `@st.cache_resource`. Fuera de eso, el código del dashboard fue escrito por el estudiante.
+La app tardaba varios segundos en responder porque los recursos de NLTK (stopwords, stemmer, lemmatizer) se reinicializaban en cada petición HTTP. Se consultó cómo cachear objetos en Flask y se aplicó el patrón de variables globales de módulo inicializadas una sola vez. Fuera de eso, el código del dashboard fue escrito por el estudiante.
 
 ### 3. Comprensión de todo el código utilizado
 
@@ -560,7 +569,7 @@ Ambos fragmentos consultados a la IA fueron revisados línea a línea antes de i
 
 **Resultado:** correcto tras corregir el Error 1 descrito más adelante.
 
-### Prueba 3 — Dashboard interactivo (`app.py`)
+### Prueba 3 — Dashboard interactivo (`flask_app.py`)
 
 **Qué se probó por página:**
 
@@ -630,10 +639,10 @@ ModuleNotFoundError: No module named 'pandas'
 
 ```bash
 python3 -m venv venv
-venv/bin/pip install pandas numpy scikit-learn nltk matplotlib seaborn streamlit joblib
+venv/bin/pip install pandas numpy scikit-learn nltk matplotlib seaborn streamlit joblib flask
 ```
 
-A partir de ese punto todos los scripts se ejecutan con `venv/bin/python3` y el dashboard con `venv/bin/streamlit run app.py`, independientemente de qué Python esté instalado en el sistema.
+A partir de ese punto todos los scripts se ejecutan con `venv/bin/python3` y el dashboard con `venv/bin/python3 flask_app.py`, independientemente de qué Python esté instalado en el sistema.
 
 ---
 
@@ -720,6 +729,6 @@ El tiempo de respuesta de la app bajó a menos de un segundo tras el cambio.
 - Manning, C. D., & Schütze, H. (1999). *Foundations of Statistical Natural Language Processing*. MIT Press.
 - Scikit-learn documentation: https://scikit-learn.org/stable/
 - NLTK documentation: https://www.nltk.org/
-- Streamlit documentation: https://docs.streamlit.io/
+- Flask documentation: https://flask.palletsprojects.com/
 - Kaggle dataset: https://www.kaggle.com/datasets/bharadwaj6/kindle-reviews
 
