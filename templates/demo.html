@@ -3,7 +3,7 @@
 <h1>Demo</h1>
 
 {% if error %}
-  <div class="alert alert-warning">Ejecuta <code>python3 main.py</code> primero para generar el modelo.</div>
+  <div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>Ejecuta <code>python3 main.py</code> primero para generar el modelo.</div>
 {% else %}
 
 <p class="text-muted">Modelo: {{ model_label }} &nbsp;·&nbsp; F1 = {{ model_f1 }}</p>
@@ -27,18 +27,18 @@
     <textarea name="texto" class="form-control" rows="4"
               placeholder="Write a book review in English...">{{ texto }}</textarea>
   </div>
-  <button type="submit" name="ejemplo" value="" class="btn btn-navy">Clasificar</button>
+  <button type="submit" name="ejemplo" value="" class="btn btn-navy"><i class="bi bi-search me-1"></i>Clasificar</button>
 </form>
 
 {% if res %}
 <hr class="my-4">
 {% if res.pred == 1 %}
   <div class="result-pos mb-3">
-    <strong style="font-size:1.1rem">POSITIVO</strong> &nbsp;—&nbsp; confianza {{ "%.1f"|format(res.proba_pos) }}%
+    <i class="bi bi-hand-thumbs-up me-2"></i><strong style="font-size:1.1rem">POSITIVO</strong> &nbsp;—&nbsp; confianza {{ "%.1f"|format(res.proba_pos) }}%
   </div>
 {% else %}
   <div class="result-neg mb-3">
-    <strong style="font-size:1.1rem">NEGATIVO</strong> &nbsp;—&nbsp; confianza {{ "%.1f"|format(res.proba_neg) }}%
+    <i class="bi bi-hand-thumbs-down me-2"></i><strong style="font-size:1.1rem">NEGATIVO</strong> &nbsp;—&nbsp; confianza {{ "%.1f"|format(res.proba_neg) }}%
   </div>
 {% endif %}
 

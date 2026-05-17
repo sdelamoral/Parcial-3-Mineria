@@ -21,7 +21,7 @@
           <label class="form-check-label" for="lemma">Lemmatization (WordNetLemmatizer)</label>
         </div>
       </div>
-      <button type="submit" class="btn btn-navy">Procesar</button>
+      <button type="submit" class="btn btn-navy"><i class="bi bi-play me-1"></i>Procesar</button>
     </form>
   </div>
 
@@ -66,12 +66,12 @@
   </div>
   <div class="col-12">
     <h5>Texto final al vectorizador:</h5>
-    <div class="result-pos">{{ res.texto_final }}</div>
+    <div class="result-pos"><i class="bi bi-check-circle me-2"></i>{{ res.texto_final }}</div>
   </div>
 </div>
 {% endif %}
 
 <div class="next-btn">
-  <a href="{{ url_for('resultados') }}" class="btn btn-navy">Siguiente: Resultados →</a>
+  <a href="{{ url_for('resultados') }}" class="btn btn-navy"><i class="bi bi-arrow-right me-1"></i>Siguiente: Resultados</a>
 </div>
 {% endblock %}

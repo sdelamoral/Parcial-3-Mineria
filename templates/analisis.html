@@ -3,7 +3,7 @@
 <h1>Análisis Comparativo</h1>
 
 {% if error %}
-  <div class="alert alert-warning">Ejecuta <code>python3 main.py</code> primero.</div>
+  <div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>Ejecuta <code>python3 main.py</code> primero.</div>
 {% else %}
 
 <ul class="nav nav-tabs mb-4" id="tabs">
@@ -85,7 +85,7 @@
       {% endfor %}
     </div>
     <div class="alert mt-3" style="background:#ddeaf7;border-left:4px solid #2e6da4">
-      BoW y TF-IDF no capturan orden de palabras, negaciones compuestas ni figuras retóricas.
+      <i class="bi bi-info-circle me-2"></i>BoW y TF-IDF no capturan orden de palabras, negaciones compuestas ni figuras retóricas.
       Un modelo basado en embeddings contextuales como BERT reduciría significativamente estos errores.
     </div>
   </div>
@@ -94,6 +94,6 @@
 {% endif %}
 
 <div class="next-btn">
-  <a href="{{ url_for('demo') }}" class="btn btn-navy">Siguiente: Demo →</a>
+  <a href="{{ url_for('demo') }}" class="btn btn-navy"><i class="bi bi-arrow-right me-1"></i>Siguiente: Demo</a>
 </div>
 {% endblock %}

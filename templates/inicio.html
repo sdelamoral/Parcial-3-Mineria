@@ -18,37 +18,37 @@
 <div class="row g-3">
   <div class="col-md-6">
     <div class="card h-100">
-      <div class="card-header">Dataset</div>
+      <div class="card-header"><i class="bi bi-bar-chart me-2"></i>Dataset</div>
       <div class="card-body">De dónde vienen los datos, cómo se etiquetaron los sentimientos y cuál es el problema principal del corpus.</div>
     </div>
   </div>
   <div class="col-md-6">
     <div class="card h-100">
-      <div class="card-header">Preprocesamiento</div>
+      <div class="card-header"><i class="bi bi-type me-2"></i>Preprocesamiento</div>
       <div class="card-body">Escribe cualquier texto y observa cómo el pipeline lo transforma paso a paso antes de llegar al modelo.</div>
     </div>
   </div>
   <div class="col-md-6">
     <div class="card h-100">
-      <div class="card-header">Resultados</div>
+      <div class="card-header"><i class="bi bi-graph-up me-2"></i>Resultados</div>
       <div class="card-body">Tabla con las métricas de las 12 configuraciones y matrices de confusión para explorar cada una.</div>
     </div>
   </div>
   <div class="col-md-6">
     <div class="card h-100">
-      <div class="card-header">Analisis Comparativo</div>
+      <div class="card-header"><i class="bi bi-search me-2"></i>Analisis Comparativo</div>
       <div class="card-body">Conclusiones sobre qué representación ganó, qué modelo funcionó mejor y qué errores comete el clasificador.</div>
     </div>
   </div>
   <div class="col-md-6">
     <div class="card h-100">
-      <div class="card-header">Demo</div>
+      <div class="card-header"><i class="bi bi-play-circle me-2"></i>Demo</div>
       <div class="card-body">Clasifica cualquier reseña en inglés en tiempo real usando el mejor modelo entrenado.</div>
     </div>
   </div>
 </div>
 
 <div class="next-btn">
-  <a href="{{ url_for('dataset') }}" class="btn btn-navy">Siguiente: Dataset →</a>
+  <a href="{{ url_for('dataset') }}" class="btn btn-navy"><i class="bi bi-arrow-right me-1"></i>Siguiente: Dataset</a>
 </div>
 {% endblock %}
